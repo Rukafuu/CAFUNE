@@ -1,4 +1,4 @@
-# 🧟 CAFUNE: The Neural Orchestra 🎻
+# CAFUNE: The Neural Orchestra 🎻
 
 <div align="center">
   <img src="docs/assets/logo.png" width="300" alt="CAFUNE Logo">
