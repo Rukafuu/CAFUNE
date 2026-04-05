@@ -40,6 +40,30 @@ struct TransformerConfig
     dropout::Float32      # Taxa de dropout
 end
 
+# ──────────────────────────────────────────────────────────────
+#  SKELETON: Ponte de Silício (C/CUDA)
+# ──────────────────────────────────────────────────────────────
+
+const LIB_CUDA_PATH = joinpath(@__DIR__, "../../c/lib/cafune_cuda.dll")
+
+"""
+    Funcao wrapper para o novo Flash Attention fundido
+"""
+function flash_attention_cuda(Q, K, V, seq_len, d_model)
+    O = zeros(Float32, seq_len, d_model)
+    
+    # launch_flash_attention(d_Q, d_K, d_V, d_O, seq_len, d_model)
+    ccall((:launch_flash_attention, LIB_CUDA_PATH), 
+          Cvoid, (Ptr{Cfloat}, Ptr{Cfloat}, Ptr{Cfloat}, Ptr{Cfloat}, Cint, Cint),
+          Q, K, V, O, Cint(seq_len), Cint(d_model))
+    
+    return O
+end
+
+# ──────────────────────────────────────────────────────────────
+#  Configuração: Arquitetura Frankenstein
+# ──────────────────────────────────────────────────────────────
+
 """Configuração tiny para desenvolvimento e teste rápido."""
 function TinyConfig(vocab_size::Int)
     return TransformerConfig(
@@ -163,17 +187,28 @@ function (mha::MultiHeadAttention)(x::Matrix{Float32})
     V_p = permutedims(V_mh, (1, 3, 2))
 
     # Scores de atenção: (seq_len, seq_len, n_heads)
-    # Refinando para Zygote-friendly:
-    # Usamos uma list comprehension que o Zygote entende perfeitamente:
-    # (seq_len, d_head, n_heads) * (d_head, seq_len, n_heads)
-    # Infelizmente Julia base nao tem batched_mul nativo eficiente como torch.bmm 
-    # entao vamos usar uma construcao que o Zygote entende:
+    # Refinando para Zygote-friendly e Suporte CUDA:
     
-    heads = [softmax(scale .* (K_p[:, :, h]' * Q_p[:, :, h]), dims=1) for h in 1:n_heads]
+    heads = Vector{Matrix{Float32}}(undef, n_heads)
+    for h in 1:n_heads
+        # Matriz de score para esta cabeça: (seq_len, seq_len)
+        score = Matrix{Float32}(undef, seq_len, seq_len)
+        
+        # Tenta o turbo de silício (CUDA)
+        # Nota: Q_p[:, :, h] é (d_head, seq_len) -> Queremos Q * K_transpose
+        # Nosso kernel faz Q * K^T, então passamos Q e K diretamente
+        # Mas no Julia o Q_p' é (seq_len, d_head)
+        if !cuda_attention_score!(collect(Q_p[:, :, h]'), collect(K_p[:, :, h]'), score, seq_len, d_head)
+            # Fallback Pure Julia (Atenção Bidirecional Padrão)
+            score = scale .* (K_p[:, :, h]' * Q_p[:, :, h])
+        end
+        
+        heads[h] = softmax(score, dims=1)
+    end
     
     # V_p: (d_head, seq_len, n_heads)
     # heads[h]: (seq_len, seq_len)
-    # out[h]: (d_head, seq_len)
+    # out_heads: (d_head, seq_len)
     out_heads = [V_p[:, :, h] * heads[h] for h in 1:n_heads]
     
     # Concatenar: (d_model, seq_len)

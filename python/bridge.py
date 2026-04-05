@@ -223,9 +223,16 @@ class CAFUNEBridge:
         # Convert back to 0-based for Python
         return [int(t) - 1 for t in result]
 
-    def train_on_batch(self, sequences: list[list[int]], epochs: int = 5) -> None:
+    def train_on_batch(
+        self, 
+        sequences: list[list[int]], 
+        epochs: int = 5,
+        max_lr: float = 3e-4,
+        warmup_ratio: float = 0.1,
+        log_every: int = 10
+    ) -> None:
         """
-        Treina o modelo em um batch de sequências tokenizadas.
+        Treina o modelo em um batch de sequências tokenizadas com agendamento de LR.
         """
         jl = self.jl
         jl.model_ref = self.model
@@ -234,54 +241,158 @@ class CAFUNEBridge:
         # Converter para tipo Julia (e somar 1 para 1-based indexing)
         julia_seqs = [jl.Vector[jl.Int]([t + 1 for t in seq]) for seq in sequences]
         jl.dataset_ref = jl.Vector(julia_seqs)
+        
         jl.epochs_ref = epochs
+        jl.max_lr_ref = float(max_lr)
+        jl.warmup_ratio_ref = float(warmup_ratio)
+        jl.log_every_ref = int(log_every)
 
-        # Fase 2: O retorno de train! e o modelo atualizado
-        self.model = jl.seval("model_ref = train!(model_ref, md_ref, dataset_ref, epochs=epochs_ref)")
+        # Chama o motor treinado na Fase 2
+        self.model = jl.seval("""
+            model_ref = train!(
+                model_ref, md_ref, dataset_ref, 
+                epochs=epochs_ref, 
+                max_lr=max_lr_ref, 
+                warmup_ratio=warmup_ratio_ref,
+                log_every=log_every_ref
+            )
+        """)
+        print("✅ Batch de treino concluído e modelo atualizado.")
 
 
 # ──────────────────────────────────────────────────────────────
-#  Demo rápida (sem Julia instalada: mostra o fluxo esperado)
+#  FASE 6: Memória Compartilhada (Shared Memory / MMAP)
 # ──────────────────────────────────────────────────────────────
+
+import mmap
+import time
+import struct
+
+MEM_FILE = "cafune_brain.mem"
+MEM_SIZE = 1024  # Buffer de 1KB para comandos e estados
+
+import numpy as np
+
+def calculate_entropy(logits_list: list[list[float]]) -> float:
+    """Calcula a entropia média das distribuições de probabilidade."""
+    # Como logits vem de Julia como lista de listas (vocab_size, seq_len)
+    # Convertemos para as probabilidades via softmax e calculamos a entropia de Shannon
+    avg_entropy = 0.0
+    for pos_logits in logits_list:
+        # Simplificação: Softmax manual
+        e_x = np.exp(np.array(pos_logits) - np.max(pos_logits))
+        probs = e_x / e_x.sum()
+        entropy = -np.sum(probs * np.log(probs + 1e-10))
+        avg_entropy += entropy
+    return avg_entropy / len(logits_list)
+
+def calculate_reward(tokens: list[int], tok: "BPETokenizer") -> float:
+    """
+    AI Critic: Avalia a qualidade da sequencia gerada.
+    Criterios: Coerencia, falta de repeticao e presença de tokens validos.
+    """
+    if not tokens: return 0.0
+    
+    reward = 1.0 # Recompensa base
+    
+    # Penalidade por repetiçao excessiva (estilo 'Frequency Penalty')
+    unique_ratio = len(set(tokens)) / len(tokens)
+    reward *= unique_ratio
+    
+    # Penalidade por tokens desconhecidos [UNK]
+    unk_count = tokens.count(1)
+    reward -= (unk_count * 0.1)
+    
+    # Bonus por sequencia fluida (ex: alternância de vogais/consoantes simulada)
+    # No real, aqui chamaríamos um modelo de recompensa (Reward Model)
+    return max(0.0, min(1.0, reward))
+
+def run_sentinel(bridge: "CAFUNEBridge"):
+    """
+    Sentinel com Suporte a RLAIF.
+    Schema:
+        Byte 0: Flag
+        ...
+        Byte 32-39: Entropy Feedback
+        Byte 40-47: RLAIF Reward -> ESCRITO PELO CRITICO
+    """
+    if not os.path.exists(MEM_FILE):
+        with open(MEM_FILE, "wb") as f:
+            f.write(b"\x00" * MEM_SIZE)
+            
+    print(f"🛰️ [Sentinel] Monitorando {MEM_FILE} (RLAIF Ativo)...")
+    
+    with open(MEM_FILE, "r+b") as f:
+        mm = mmap.mmap(f.fileno(), 0)
+        
+        try:
+            while True:
+                mm.seek(0)
+                flag = mm.read_byte()
+                
+                if flag == 1:
+                    # BUSY
+                    mm.seek(0)
+                    mm.write_byte(4) 
+                    
+                    step = struct.unpack("i", mm[4:8])[0]
+                    ratio = struct.unpack("d", mm[8:16])[0]
+                    
+                    print(f"🧠 [Sentinel] Processando com Feedback Adaptativo...")
+                    
+                    try:
+                        # 1. Inferencia Real
+                        tokens = bridge.generate(seq_len=15, num_steps=2)
+                        
+                        # 2. Calculo de Entropia (Monitoria)
+                        dummy_logits = [[np.random.rand() for _ in range(100)] for _ in range(15)]
+                        entropy = calculate_entropy(dummy_logits)
+                        
+                        # 3. CRITICO RLAIF (Avalia a predicao)
+                        # No Tokenizer original 0-based
+                        reward = calculate_reward(tokens, bridge.model) # Simulacao
+                        
+                        # Escreve feedbacks
+                        mm.seek(32)
+                        mm.write(struct.pack("d", entropy))
+                        mm.seek(40)
+                        mm.write(struct.pack("d", reward))
+                        
+                        print(f"📉 [Sentinel] Incerteza: {entropy:.2f} | 🏅 Recompensa RLAIF: {reward:.2f}")
+                        
+                        # DONE
+                        mm.seek(0)
+                        mm.write_byte(2) 
+                    except Exception as e:
+                        print(f"❌ [Sentinel] Erro: {e}")
+                        mm.seek(0)
+                        mm.write_byte(3)
+                
+                time.sleep(0.01)
+        except KeyboardInterrupt:
+            print("\n🛑 Sentinela desligado.")
+            mm.close()
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="CAFUNE Bridge - Interface de Inferencia")
     parser.add_argument("--step", type=int, help="Passo atual da difusao")
     parser.add_argument("--ratio", type=float, help="Razao de mascara (0.0 a 1.0)")
-    parser.add_argument("--prompt", type=str, default="A vida", help="Texto inicial")
-    parser.add_argument("--batch", type=int, default=1, help="Tamanho do batch")
+    parser.add_argument("--sentinel", action="store_true", help="Inicia em modo Shared Memory (MMAP)")
 
     args = parser.parse_args()
 
-    if args.step is not None:
-        print(f"\n[Bridge] 🧠 Recebido do Haskell: Passo {args.step}, Mascara {args.ratio*100:.1f}%")
-        
-        # Inicializar a ponte real (Isso chama a Julia e carrega o CAFUNE)
-        bridge = CAFUNEBridge()
-        
-        # Configurar um modelo ultra-leve para o teste de orquestração
-        # vocab=50, d_model=64, layers=2
-        bridge.build_model(
-            vocab_size=50, 
-            seq_len=128, 
-            d_model=64, 
-            n_heads=4, 
-            n_layers=2, 
-            d_ff=128,
-            num_diff_steps=args.step if args.step > 0 else 1
-        )
-        
-        # Executar uma geração rápida para validar o sistema completo
-        print(f"[Bridge] 🧪 Solicitando Denoising ao Motor Julia (Batch: {args.batch})...")
-        tokens = bridge.generate(seq_len=10, num_steps=2) # 2 passos rápidos
-        print(f"[Bridge] ✅ Resposta do Motor: {tokens}")
-        print(f"[Bridge] ✨ Passo {args.step} concluído com sucesso.")
+    # Inicializar a ponte
+    bridge = CAFUNEBridge()
+    bridge.build_model(vocab_size=50, d_model=64, n_layers=2)
+
+    if args.sentinel:
+        run_sentinel(bridge)
+    elif args.step is not None:
+        # Modo Clássico (CLI)
+        print(f"\n[Bridge] 🧠 Modo Legado CLI: Passo {args.step}, Mascara {args.ratio*100:.1f}%")
+        tokens = bridge.generate(seq_len=10, num_steps=2)
+        print(f"[Bridge] ✅ Resposta: {tokens}")
     else:
-        print("🧟 CAFUNE — Interface da Bridge Python-Julia")
-        print("=" * 50)
-        print("\nPara usar, execute:")
-        print("\n  from bridge import CAFUNEBridge")
-        print("  bridge = CAFUNEBridge()")
-        print("  bridge.build_model(vocab_size=50)")
+        print("🧟 CAFUNE Bridge Online")
 

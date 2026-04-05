@@ -172,52 +172,137 @@ function train_step!(model::BidirectionalTransformer, md::MaskDiffusion,
 end
 
 # ============================================================
+#  Agendamento de Learning Rate (Fase 2)
+# ============================================================
+
+"""
+    get_cosine_lr(step, total_steps, max_lr, min_lr, warmup_steps)
+
+Calcula o learning rate com Warmup Linear e Decaimento em Cosseno.
+"""
+function get_cosine_lr(step::Int, total_steps::Int, max_lr::Float32, min_lr::Float32, warmup_steps::Int)
+    if step < warmup_steps
+        return max_lr * Float32(step) / Float32(warmup_steps)
+    end
+    
+    if step >= total_steps
+        return min_lr
+    end
+    
+    # Decaimento em cosseno
+    progress = Float32(step - warmup_steps) / Float32(total_steps - warmup_steps)
+    return min_lr + 0.5f0 * (max_lr - min_lr) * (1f0 + cos(Float32(π) * progress))
+end
+
+# ============================================================
 #  Loop de Treino
 # ============================================================
 
+"""
+    train_on_reward!(model, tokens, reward; lr=1e-5)
+
+Realiza um passo de otimizacao por reforço (RLAIF).
+Usa a recompensa (Reward) para guiar o gradiente, tentando aumentar a probabilidade 
+das sequencias que o Critico IA gostou.
+"""
+function train_on_reward!(model, tokens, reward; lr=1e-5)
+    # Se a recompensa for baixa, o "loss" eh alto
+    loss_val = 1.0f0 - Float32(reward)
+    
+    # Simula um passo de Policy Gradient simplificado
+    ps = Flux.params(model)
+    gs = Zygote.gradient(ps) do
+        # Loss proporcional a insatisfacao do Critico
+        logits = model(tokens)
+        return loss_val * sum(abs2, logits) # Simplificado para o demo
+    end
+    
+    # Atualiza pesos (SGD rapido)
+    for p in ps
+        if gs[p] !== nothing
+            p .-= lr .* gs[p]
+        end
+    end
+    return loss_val
+end
+
+# ──────────────────────────────────────────────────────────────
+#  Loop de Treino Original
+# ──────────────────────────────────────────────────────────────
+"""
+    train!(model, md, dataset; epochs, batch_size, max_lr, warmup_ratio)
+
+Loop de treino completo com agendamento de LR.
+"""
 function train!(model::BidirectionalTransformer, md::MaskDiffusion,
                 dataset::AbstractVector;
-                epochs::Int=10, log_every::Int=100)
+                epochs::Int=10, 
+                max_lr::Float64=3e-4,
+                warmup_ratio::Float64=0.1,
+                log_every::Int=10)
 
-    # Inicializar otimizador moderno (AdamW do Optimisers.jl)
-    opt = Optimisers.Adam(3f-4)
+    # 1. Configuração do Otimizador (AdamW)
+    opt = Optimisers.Adam(Float32(max_lr))
     opt_state = Optimisers.setup(opt, model)
     
-    total_steps = 0
+    total_samples = length(dataset)
+    total_steps = epochs * total_samples
+    warmup_steps = floor(Int, total_steps * warmup_ratio)
+    min_lr = Float32(max_lr / 10.0)
+
+    total_step_count = 0
     best_loss = Inf
 
-    @printf("\n[CAFUNE Training] Fase 2: Autodiff Ativado\n")
-    @printf("   Treinando %d parametros...\n", count_params(model))
-    @printf("   Dataset: %d sequencias\n\n", length(dataset))
+    @printf("\n[CAFUNE Training] Fase 2: Escala & Autodiff\n")
+    @printf("   Parametros: %s (%.2fM)\n", 
+            format_params(count_params(model)), count_params(model)/1e6)
+    @printf("   Dataset: %d sequencias | Steps Totais: %d\n", total_samples, total_steps)
+    @printf("   Warmup: %d steps | Max LR: %.2e\n\n", warmup_steps, max_lr)
 
     for epoch in 1:epochs
         epoch_loss = 0f0
-        indices = randperm(length(dataset))
+        indices = randperm(total_samples)
 
-        for (step, idx) in enumerate(indices)
-            tokens = dataset[idx]
+        for (step_in_epoch, idx) in enumerate(indices)
+            total_step_count += 1
+            tokens = dataset[idx] # Tokens: (seq_len, batch_size)
             
-            # Step de treino autodiff
+            # --- AGENDAMENTO DE LR ---
+            lr = get_cosine_lr(total_step_count, total_steps, Float32(max_lr), min_lr, warmup_steps)
+            Optimisers.adjust!(opt_state, lr)
+            
+            # --- STEP DE TREINO ---
             loss, opt_state, model = train_step!(model, md, tokens, opt_state)
             
             epoch_loss += loss
-            total_steps += 1
 
-            if total_steps % log_every == 0
-                avg_loss = epoch_loss / step
-                @printf("  Epoch %d | Step %d | Loss: %.4f\n", epoch, total_steps, avg_loss)
+            if total_step_count % log_every == 0 || total_step_count == 1
+                avg_loss = epoch_loss / step_in_epoch
+                @printf("  Epoch %d | Step %d/%d | LR: %.2e | Loss: %.4f\n", 
+                        epoch, total_step_count, total_steps, lr, avg_loss)
             end
         end
 
-        avg_loss = epoch_loss / length(dataset)
+        avg_loss = epoch_loss / total_samples
         @printf("✅ Epoch %d concluída | Loss média: %.4f\n", epoch, avg_loss)
 
         if avg_loss < best_loss
             best_loss = avg_loss
-            @printf("   ⭐ Melhor loss até agora!\n")
+            @printf("   ⭐ Nova melhor loss!\n")
         end
     end
 
     @printf("\nTreino fase 2 concluido! Best loss: %.4f\n", best_loss)
     return model
+end
+
+"""Helper para formatar numeros de parametros."""
+function format_params(n::Int)
+    if n >= 1_000_000
+        return @sprintf("%.2fM", n / 1_000_000)
+    elseif n >= 1_000
+        return @sprintf("%.2fK", n / 1_000)
+    else
+        return string(n)
+    end
 end

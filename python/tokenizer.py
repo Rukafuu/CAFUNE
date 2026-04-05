@@ -159,15 +159,11 @@ if __name__ == "__main__":
     tok = CharTokenizer()
     tok.build_vocab(corpus)
 
-    test_text = "O gato preto"
+    test_text = "Inteligência Artificial na Difusão"
     ids = tok.encode(test_text)
     decoded = tok.decode(ids)
 
     print(f"\n📝 Texto:    '{test_text}'")
     print(f"🔢 IDs:      {ids}")
     print(f"📖 Decoded:  '{decoded}'")
-
-    # Simular mascaramento
-    import random
-    masked = [MASK_TOKEN_ID if random.random() < 0.5 else id_ for id_ in ids]
-    print(f"\n🎭 Mascarado 50%: {tok.decode(masked, skip_special=False)}")
+    print(f"📊 Compressão: {len(test_text)} chars -> {len(ids)} tokens")
