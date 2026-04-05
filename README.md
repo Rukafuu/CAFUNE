@@ -30,15 +30,28 @@ O CAFUNE opera como um organismo neural completo, integrando 4 linguagens para l
 
 ---
 
-## 🚀 ROADMAP DE EVOLUÇÃO (CONCLUÍDO)
+## 🚀 ROADMAP DE EVOLUÇÃO (TOTAL)
 
+### **A Fundação: Gênese do Motor**
+- [x] **Fase 1**: Arquitetura Bidirecional em Julia (Flux.jl).
+- [x] **Fase 2**: Treinamento por Mascaramento e Difusão de Texto.
+- [x] **Fase 3**: Autograd Zygote & Otimização de Perda Cross-Entropy.
+- [x] **Fase 4**: Escalonamento Inicial e Validação de Denoising.
+
+### **O Salto: Performance de Elite**
 - [x] **Fase 5**: Escalabilidade para 10M parâmetros.
-- [x] **Fase 6**: IPC Shared Memory (mmap).
+- [x] **Fase 6**: IPC Shared Memory (mmap) - Zero-Copy.
 - [x] **Fase 7**: Tokenização BPE (Byte-Pair Encoding).
-- [x] **Fase 8**: Denoising Adaptativo (Entropia).
-- [x] **Fase 9**: Flash Attention v2 (CUDA Kernel).
-- [x] **Fase 10**: Lira Dashboard Visual.
-- [x] **Fase 11**: RLAIF (Self-Alignment Loop).
+- [x] **Fase 8**: Denoising Adaptativo (Feedback de Entropia).
+- [x] **Fase 9**: Flash Attention v2 (Kernel CUDA Fused).
+- [x] **Fase 10**: Lira Dashboard Visual (Web UI).
+- [x] **Fase 11**: RLAIF (Self-Alignment Feedback Loop).
+
+### **A Ascensão: Integração Lira (EM DESENVOLVIMENTO)**
+- [ ] **Fase 12**: **Lira Neuro-Interface**: Integração como módulo nativo do ecossistema Lira.
+- [ ] **Fase 13**: **Voice-to-Diffusion**: Conexão direta com STT/TTS (Denoising de intenção).
+- [ ] **Fase 14**: **Difusão Multimodal**: Expansão para áudio e imagens "purificados".
+- [ ] **Fase 15**: **Cognição em Enxame**: Processamento distribuído na malha Lira.
 
 ---
 
