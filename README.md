@@ -53,11 +53,9 @@ Diferente de modelos autoregressivos tradicionais, o CAFUNE é inspirado no Sist
 *   **Teoria da Mente (ToM)**: Arquitetura otimizada para ativar circuitos funcionais em camadas superiores para detecção de estados mentais e intenções complexas.
 *   **Mirror Neuron Index (CMNI)**: Métrica implementada para quantificar a capacidade de espelhamento do modelo.
 
-O Mirror Neuron Score (MNS) de cada neurônio é calculado como:
+O **Mirror Neuron Score (MNS)** de cada neurônio é calculado como:
 
-<p align="center">
-  <img src="assets/mns_equation.png" width="500" alt="MNS Equation">
-</p>
+$$MNS_n = \frac{\Delta \mu_n(D_f) + \Delta \mu_n(D_t)}{2}$$
 
 ---
 
