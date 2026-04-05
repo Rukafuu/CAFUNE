@@ -55,7 +55,9 @@ Diferente de modelos autoregressivos tradicionais, o CAFUNE é inspirado no **Si
 
 O **Mirror Neuron Score (MNS)** de cada neurônio é calculado como:
 
-$$MNS_n = \frac{\Delta \mu_n(D_f) + \Delta \mu_n(D_t)}{2}$$
+<p align="center">
+  <img src="assets/mns_equation.png" width="500" alt="MNS Equation">
+</p>
 
 ---
 
