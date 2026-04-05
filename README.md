@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="assets/logo.png" width="400" alt="CAFUNE Logo">
+</p>
 
 # 👺 CAFUNE: Neural Engine de Difusão Adaptativa (Ph 1-11)
 
