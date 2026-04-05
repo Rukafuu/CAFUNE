@@ -71,14 +71,15 @@ O CAFUNE segue o Zombie Performance Manifesto (ZPM): cada ciclo de clock é otim
 
 ---
 
-## MÉTRICAS DE VALIDAÇÃO (STATUS DE TREINO)
+## 📊 MÉTRICAS
 
-| Métrica | Valor Atual | Status |
-| :--- | :--- | :--- |
-| Parâmetros | 72,960 (Tiny-Engine) | Validado |
-| Loss (20 épocas) | 2.73 | Em queda |
-| Latência (Denoising) | ~12ms / passo | Otimizado (CUDA) |
-| Alinhamento RLAIF | 0.89 Reward | Alinhado |
+| Métrica | Valor | Status |
+|--------|------|--------|
+| Parâmetros | 72,960 | ✅ |
+| Loss | 2.73 ↓ | 📉 |
+| Latência | ~12ms | 🚀 |
+
+---
 
 ---
 
