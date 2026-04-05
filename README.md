@@ -65,5 +65,4 @@ python CAFUNE/python/bridge.py --step 1 --ratio 0.9 --batch 2
 ---
 
 ## ⚖️ License & Respect
-Created with pride by **kimjammer / Neuro** & **Antigravity**.
 If you find this useful, remember: *Architecture is a choice; Performance is a duty.* 🏁 🦾 🚀
