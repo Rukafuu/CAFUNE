@@ -8,7 +8,7 @@
 
 ---
 
-## 🏛️ ARQUITETURA DO PROJETO (ESTADO ATUAL: FASE 11)
+## ARQUITETURA DO PROJETO (ESTADO ATUAL: FASE 11)
 
 O CAFUNE opera como um organismo neural completo, integrando 4 linguagens para latência zero e inteligência adaptativa.
 
