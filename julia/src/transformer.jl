@@ -1,0 +1,390 @@
+"""
+    transformer.jl — Bidirectional Transformer (o coração do DLLM)
+
+    DIFERENÇA CRÍTICA de um GPT:
+    - GPT usa causal mask → só vê tokens anteriores (esquerda → direita)
+    - LLaDA usa ATENÇÃO BIDIRECIONAL → vê TODA a sequência
+    
+    Por que bidirecional?
+    Ao prever tokens mascarados, o modelo precisa usar contexto
+    tanto à esquerda QUANTO à direita — como o BERT.
+    
+    Arquitetura:
+        Token Embedding + Positional Embedding
+            ↓
+        [TransformerBlock × N]
+            ↓
+        Language Model Head (vocab_size logits)
+"""
+
+using LinearAlgebra
+using Statistics
+using Functors
+
+# ============================================================
+#  Configuração
+# ============================================================
+
+"""
+    TransformerConfig
+
+Hiperparâmetros do modelo. Para começar pequeno e verificar que aprende.
+"""
+struct TransformerConfig
+    vocab_size::Int       # Tamanho do vocabulário
+    seq_len::Int          # Comprimento máximo da sequência
+    d_model::Int          # Dimensão do embedding (ex: 256)
+    n_heads::Int          # Número de cabeças de atenção (ex: 8)
+    n_layers::Int         # Número de camadas transformer (ex: 6)
+    d_ff::Int             # Dimensão da camada FFN (ex: 1024 = 4 * d_model)
+    dropout::Float32      # Taxa de dropout
+end
+
+"""Configuração tiny para desenvolvimento e teste rápido."""
+function TinyConfig(vocab_size::Int)
+    return TransformerConfig(
+        vocab_size,  # vocab_size
+        128,         # seq_len
+        128,         # d_model
+        4,           # n_heads
+        4,           # n_layers
+        512,         # d_ff
+        0.1f0        # dropout
+    )
+end
+
+"""Configuração small para treino em CPU."""
+function SmallConfig(vocab_size::Int)
+    return TransformerConfig(
+        vocab_size,  # vocab_size
+        256,         # seq_len
+        256,         # d_model
+        8,           # n_heads
+        6,           # n_layers
+        1024,        # d_ff
+        0.1f0        # dropout
+    )
+end
+
+# ============================================================
+#  Componentes Básicos (implementação manual para ser didático)
+# ============================================================
+
+"""
+    layer_norm(x, γ, β; ε=1e-6)
+
+Layer Normalization: normaliza ao longo da dimensão do modelo.
+x: (d_model, seq_len) ou (d_model, seq_len, batch)
+"""
+function layer_norm(x::AbstractArray, γ::AbstractVector, β::AbstractVector; ε::Float32=1f-6)
+    # x: (d_model, seq_len)
+    μ = mean(x, dims=1)
+    σ² = var(x, dims=1, corrected=false)
+    # O Zygote funciona melhor com operacoes broadcasting puras
+    return γ .* ((x .- μ) ./ sqrt.(σ² .+ ε)) .+ β
+end
+
+"""
+    softmax(x; dims=1)
+
+Softmax numericamente estavel.
+"""
+function softmax(x::AbstractArray; dims::Int=1)
+    x_max = maximum(x, dims=dims)
+    exp_x = exp.(x .- x_max)
+    return exp_x ./ sum(exp_x, dims=dims)
+end
+
+"""
+    gelu(x)
+
+GELU activation — usado em GPT/BERT, mais suave que ReLU.
+"""
+gelu(x) = x .* 0.5f0 .* (1f0 .+ tanh.(sqrt(2f0/π) .* (x .+ 0.044715f0 .* x.^3)))
+
+# ============================================================
+#  Multi-Head Self-Attention (BIDIRECIONAL)
+# ============================================================
+
+"""
+    MultiHeadAttention
+
+Atenção multi-cabeça SEM máscara causal — o modelo vê toda a sequência.
+Parâmetros: Wq, Wk, Wv (projeções), Wo (saída).
+"""
+mutable struct MultiHeadAttention
+    Wq::Matrix{Float32}   # (d_model, d_model)
+    Wk::Matrix{Float32}
+    Wv::Matrix{Float32}
+    Wo::Matrix{Float32}
+    n_heads::Int
+    d_head::Int            # d_model ÷ n_heads
+end
+
+@functor MultiHeadAttention (Wq, Wk, Wv, Wo)
+
+function MultiHeadAttention(d_model::Int, n_heads::Int)
+    @assert d_model % n_heads == 0 "d_model deve ser divisível por n_heads"
+    d_head = d_model ÷ n_heads
+    scale = Float32(sqrt(d_model))
+
+    return MultiHeadAttention(
+        randn(Float32, d_model, d_model) ./ scale,
+        randn(Float32, d_model, d_model) ./ scale,
+        randn(Float32, d_model, d_model) ./ scale,
+        randn(Float32, d_model, d_model) ./ scale,
+        n_heads,
+        d_head
+    )
+end
+function (mha::MultiHeadAttention)(x::Matrix{Float32})
+    d_model, seq_len = size(x)
+    n_heads = mha.n_heads
+    d_head = mha.d_head
+    scale = Float32(1.0 / sqrt(d_head))
+
+    # Projeções Q, K, V: (d_model, seq_len)
+    Q = mha.Wq * x
+    K = mha.Wk * x
+    V = mha.Wv * x
+
+    # Multi-head split: (d_head, n_heads, seq_len)
+    # O Julia eh Column-Major, entao queremos a dimensao de seq_len por ultimo para eficiencia
+    Q_mh = reshape(Q, d_head, n_heads, seq_len)
+    K_mh = reshape(K, d_head, n_heads, seq_len)
+    V_mh = reshape(V, d_head, n_heads, seq_len)
+
+    # Attention: (seq_len, seq_len, n_heads)
+    # Para cada head: Q' * K
+    # Usamos permutedims para alinhar para a multiplicacao de matrizes em batch
+    # Q_p: (d_head, seq_len, n_heads)
+    Q_p = permutedims(Q_mh, (1, 3, 2))
+    K_p = permutedims(K_mh, (1, 3, 2))
+    V_p = permutedims(V_mh, (1, 3, 2))
+
+    # Scores de atenção: (seq_len, seq_len, n_heads)
+    # Refinando para Zygote-friendly:
+    # Usamos uma list comprehension que o Zygote entende perfeitamente:
+    # (seq_len, d_head, n_heads) * (d_head, seq_len, n_heads)
+    # Infelizmente Julia base nao tem batched_mul nativo eficiente como torch.bmm 
+    # entao vamos usar uma construcao que o Zygote entende:
+    
+    heads = [softmax(scale .* (K_p[:, :, h]' * Q_p[:, :, h]), dims=1) for h in 1:n_heads]
+    
+    # V_p: (d_head, seq_len, n_heads)
+    # heads[h]: (seq_len, seq_len)
+    # out[h]: (d_head, seq_len)
+    out_heads = [V_p[:, :, h] * heads[h] for h in 1:n_heads]
+    
+    # Concatenar: (d_model, seq_len)
+    output_concat = reduce(vcat, out_heads)
+    
+    return mha.Wo * output_concat
+end
+
+
+# ============================================================
+#  Feed-Forward Network
+# ============================================================
+
+"""
+    FFN
+
+Posição-wise FFN: Linear → GELU → Linear
+Expande d_model → d_ff → d_model
+"""
+mutable struct FFN
+    W1::Matrix{Float32}   # (d_ff, d_model)
+    b1::Vector{Float32}
+    W2::Matrix{Float32}   # (d_model, d_ff)
+    b2::Vector{Float32}
+end
+
+@functor FFN
+
+function FFN(d_model::Int, d_ff::Int)
+    scale = Float32(sqrt(2.0 / d_model))
+    return FFN(
+        randn(Float32, d_ff, d_model) .* scale,
+        zeros(Float32, d_ff),
+        randn(Float32, d_model, d_ff) .* scale,
+        zeros(Float32, d_model)
+    )
+end
+
+function (ffn::FFN)(x::Matrix{Float32})
+    # x: (d_model, seq_len)
+    h = gelu(ffn.W1 * x .+ ffn.b1)   # (d_ff, seq_len)
+    return ffn.W2 * h .+ ffn.b2       # (d_model, seq_len)
+end
+
+# ============================================================
+#  Transformer Block
+# ============================================================
+
+"""
+    TransformerBlock
+
+Um bloco completo: Attention → Add&Norm → FFN → Add&Norm
+Usa conexões residuais (pre-norm style, como GPT-3).
+"""
+mutable struct TransformerBlock
+    attn::MultiHeadAttention
+    ffn::FFN
+    norm1_γ::Vector{Float32}
+    norm1_β::Vector{Float32}
+    norm2_γ::Vector{Float32}
+    norm2_β::Vector{Float32}
+end
+
+@functor TransformerBlock
+
+function TransformerBlock(d_model::Int, n_heads::Int, d_ff::Int)
+    return TransformerBlock(
+        MultiHeadAttention(d_model, n_heads),
+        FFN(d_model, d_ff),
+        ones(Float32, d_model),   # γ inicializado com 1
+        zeros(Float32, d_model),  # β inicializado com 0
+        ones(Float32, d_model),
+        zeros(Float32, d_model)
+    )
+end
+
+function (block::TransformerBlock)(x::Matrix{Float32})
+    # Pre-norm + attention + residual
+    x = x + block.attn(layer_norm(x, block.norm1_γ, block.norm1_β))
+    # Pre-norm + FFN + residual
+    x = x + block.ffn(layer_norm(x, block.norm2_γ, block.norm2_β))
+    return x
+end
+
+# ============================================================
+#  Positional Embedding (Sinusoidal)
+# ============================================================
+
+"""
+    sinusoidal_embedding(seq_len, d_model) → Matrix{Float32}
+
+Embedding posicional sinusoidal (não-aprendido, como no paper original).
+Output: (d_model, seq_len)
+"""
+function sinusoidal_embedding(seq_len::Int, d_model::Int)
+    # 1. Gerar termos de div (frequências) - (d_model/2,)
+    i_half = Float32.(0:2:d_model-1)
+    div_term = exp.(i_half .* -(log(10000.0f0) / d_model))
+    
+    # 2. Gerar posições (seq_len,)
+    pos = Float32.(1:seq_len)
+    
+    # 3. Outer product para ângulos - (d_model/2, seq_len)
+    angles = div_term .* pos'
+    sines = sin.(angles)
+    cosines = cos.(angles)
+    
+    # 4. Intercalar (sin, cos) funcionalmente via stack -> (2, d_model/2, seq_len)
+    # Depois reshape para (d_model, seq_len)
+    pe_combined = stack([sines, cosines], dims=1)
+    return reshape(pe_combined, d_model, seq_len)
+end
+
+# ============================================================
+#  Modelo Completo
+# ============================================================
+
+"""
+    BidirectionalTransformer
+
+O denoiser principal do LLaDA. Recebe tokens (parcialmente mascarados),
+e prevê os tokens originais em TODAS as posições.
+
+Mesmo que só calculemos a loss nas posições mascaradas durante o treino,
+o modelo prevê tudo — isso é necessário para a inferência iterativa.
+"""
+mutable struct BidirectionalTransformer
+    token_emb::Matrix{Float32}    # (d_model, vocab_size)
+    blocks::Vector{TransformerBlock}
+    norm_final_γ::Vector{Float32}
+    norm_final_β::Vector{Float32}
+    lm_head::Matrix{Float32}      # (vocab_size, d_model) — prediz logits
+    config::TransformerConfig
+end
+
+@functor BidirectionalTransformer (token_emb, blocks, norm_final_γ, norm_final_β, lm_head)
+
+function BidirectionalTransformer(config::TransformerConfig)
+    scale = Float32(sqrt(1.0 / config.d_model))
+
+    token_emb = randn(Float32, config.d_model, config.vocab_size) .* scale
+
+    blocks = [TransformerBlock(config.d_model, config.n_heads, config.d_ff)
+              for _ in 1:config.n_layers]
+
+    return BidirectionalTransformer(
+        token_emb,
+        blocks,
+        ones(Float32, config.d_model),
+        zeros(Float32, config.d_model),
+        randn(Float32, config.vocab_size, config.d_model) .* scale,
+        config
+    )
+end
+
+"""
+    (model::BidirectionalTransformer)(tokens::Matrix{Int}) → logits_3d
+
+Versão batch do forward pass. Retorna tensor (vocab_size, seq_len, batch_size).
+"""
+function (model::BidirectionalTransformer)(tokens::Matrix{Int})
+    batch_size = size(tokens, 2)
+    # Zygote eh eficiente com list comprehensions
+    logits_list = [model(tokens[:, i]) for i in 1:batch_size]
+    # Reassemble num tensor 3D: (vocab_size, seq_len, batch_size)
+    # 'stack' eh mais eficiente e amigavel ao Zygote que 'cat' no Julia moderno
+    return stack(logits_list)
+end
+
+"""
+    (model::BidirectionalTransformer)(tokens::Vector{Int}) → logits
+
+Forward pass completo para uma única sequência. Retorna Matrix (vocab_size, seq_len).
+"""
+function (model::BidirectionalTransformer)(tokens::Vector{Int})
+    seq_len = length(tokens)
+    d_model = model.config.d_model
+
+    # 1. Token Embedding
+    x = model.token_emb[:, tokens]   # (d_model, seq_len)
+
+    # 2. Positional Embedding (somado ao token embedding)
+    pe = sinusoidal_embedding(seq_len, d_model)
+    x = x .+ pe
+
+    # 3. Passar pelos transformer blocks
+    for block in model.blocks
+        x = block(x)
+    end
+
+    # 4. Layer norm final
+    x = layer_norm(x, model.norm_final_γ, model.norm_final_β)
+
+    # 5. LM Head: projeta para logits sobre o vocabulário
+    logits = model.lm_head * x   # (vocab_size, seq_len)
+
+    return logits
+end
+
+"""Conta o número de parâmetros do modelo."""
+function count_params(model::BidirectionalTransformer)
+    n = 0
+    cfg = model.config
+    n += cfg.d_model * cfg.vocab_size   # token_emb
+    for _ in 1:cfg.n_layers
+        n += 4 * cfg.d_model^2          # Wq, Wk, Wv, Wo
+        n += cfg.d_ff * cfg.d_model + cfg.d_ff  # W1, b1
+        n += cfg.d_model * cfg.d_ff + cfg.d_model  # W2, b2
+        n += 4 * cfg.d_model            # 2x LayerNorm (γ, β)
+    end
+    n += 2 * cfg.d_model                # norm_final
+    n += cfg.vocab_size * cfg.d_model   # lm_head
+    return n
+end

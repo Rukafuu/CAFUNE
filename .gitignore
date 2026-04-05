@@ -1,0 +1,40 @@
+# === CAFUNE: Elite GitIgnore ===
+
+# Cérebro: Haskell
+dist-newstyle/
+.stack-work/
+*.hi
+*.o
+*.dyn_hi
+*.dyn_o
+
+# Motor: Julia
+.julia/
+Manifest.toml
+*.jl.cov
+*.jl.mem
+
+# Mensageiro: Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+.venv/
+.pytest_cache/
+
+# Silício: CUDA / C
+*.obj
+*.exe
+*.dll
+*.lib
+*.exp
+*.so
+*.a
+*.out
+
+# Logs e Misc
+*.log
+temp/
+/tmp/
+.DS_Store
