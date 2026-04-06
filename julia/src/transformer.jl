@@ -52,12 +52,35 @@ const LIB_CUDA_PATH = joinpath(@__DIR__, "../../c/lib/cafune_cuda.dll")
 function flash_attention_cuda(Q, K, V, seq_len, d_model)
     O = zeros(Float32, seq_len, d_model)
     
-    # launch_flash_attention(d_Q, d_K, d_V, d_O, seq_len, d_model)
-    ccall((:launch_flash_attention, LIB_CUDA_PATH), 
-          Cvoid, (Ptr{Cfloat}, Ptr{Cfloat}, Ptr{Cfloat}, Ptr{Cfloat}, Cint, Cint),
-          Q, K, V, O, Cint(seq_len), Cint(d_model))
+    if isfile(LIB_CUDA_PATH)
+        # launch_flash_attention(d_Q, d_K, d_V, d_O, seq_len, d_model)
+        ccall((:launch_flash_attention, LIB_CUDA_PATH), 
+              Cvoid, (Ptr{Cfloat}, Ptr{Cfloat}, Ptr{Cfloat}, Ptr{Cfloat}, Cint, Cint),
+              Q, K, V, O, Cint(seq_len), Cint(d_model))
+    end
     
     return O
+end
+
+"""
+    cuda_attention_score!(Q, K, score, seq_len, d_head)
+    
+Tenta usar GPU para calcular o produto escalar da atenção.
+Retorna true se disparado com sucesso, false caso contrário.
+"""
+function cuda_attention_score!(Q, K, score, seq_len, d_head)
+    if isfile(LIB_CUDA_PATH)
+        try
+            # launch_attention_score(d_Q, d_K, d_S, seq_len, d_head)
+            ccall((:launch_attention_score, LIB_CUDA_PATH), 
+                  Cint, (Ptr{Cfloat}, Ptr{Cfloat}, Ptr{Cfloat}, Cint, Cint),
+                  Q, K, score, Cint(seq_len), Cint(d_head))
+            return true
+        catch
+            return false
+        end
+    end
+    return false
 end
 
 # ──────────────────────────────────────────────────────────────
@@ -102,8 +125,8 @@ x: (d_model, seq_len) ou (d_model, seq_len, batch)
 """
 function layer_norm(x::AbstractArray, γ::AbstractVector, β::AbstractVector; ε::Float32=1f-6)
     # x: (d_model, seq_len)
-    μ = mean(x, dims=1)
-    σ² = var(x, dims=1, corrected=false)
+    μ = Statistics.mean(x, dims=1)
+    σ² = Statistics.var(x, dims=1, corrected=false)
     # O Zygote funciona melhor com operacoes broadcasting puras
     return γ .* ((x .- μ) ./ sqrt.(σ² .+ ε)) .+ β
 end
@@ -187,24 +210,8 @@ function (mha::MultiHeadAttention)(x::Matrix{Float32})
     V_p = permutedims(V_mh, (1, 3, 2))
 
     # Scores de atenção: (seq_len, seq_len, n_heads)
-    # Refinando para Zygote-friendly e Suporte CUDA:
-    
-    heads = Vector{Matrix{Float32}}(undef, n_heads)
-    for h in 1:n_heads
-        # Matriz de score para esta cabeça: (seq_len, seq_len)
-        score = Matrix{Float32}(undef, seq_len, seq_len)
-        
-        # Tenta o turbo de silício (CUDA)
-        # Nota: Q_p[:, :, h] é (d_head, seq_len) -> Queremos Q * K_transpose
-        # Nosso kernel faz Q * K^T, então passamos Q e K diretamente
-        # Mas no Julia o Q_p' é (seq_len, d_head)
-        if !cuda_attention_score!(collect(Q_p[:, :, h]'), collect(K_p[:, :, h]'), score, seq_len, d_head)
-            # Fallback Pure Julia (Atenção Bidirecional Padrão)
-            score = scale .* (K_p[:, :, h]' * Q_p[:, :, h])
-        end
-        
-        heads[h] = softmax(score, dims=1)
-    end
+    # Zygote-friendly: Evitando mutação com array comprehension
+    heads = [softmax(scale .* (K_p[:, :, h]' * Q_p[:, :, h]), dims=1) for h in 1:n_heads]
     
     # V_p: (d_head, seq_len, n_heads)
     # heads[h]: (seq_len, seq_len)

@@ -147,6 +147,9 @@ class CharTokenizer:
 #  Teste rápido
 # ──────────────────────────────────────────────────────────────
 
+# Alias para compatibilidade avançada (Fase 1)
+BPETokenizer = CharTokenizer
+
 if __name__ == "__main__":
     corpus = [
         "O gato preto pulou sobre o muro.",

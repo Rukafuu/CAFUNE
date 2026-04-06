@@ -1,104 +1,47 @@
+# 🧠 CAFUNE Neural Engine — v2.0 (GIGANTE)
 
-<p align="center">
-  <img src="assets/logo.png" width="400" alt="CAFUNE Logo">
-</p>
-
-# CAFUNE: Neural Engine de Difusão Adaptativa
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Haskell-5e5086?style=for-the-badge&logo=haskell&logoColor=white" alt="Haskell">
-  <img src="https://img.shields.io/badge/Julia-9558b2?style=for-the-badge&logo=julia&logoColor=white" alt="Julia">
-  <img src="https://img.shields.io/badge/Python-3776ab?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/CUDA-76b900?style=for-the-badge&logo=nvidia&logoColor=white" alt="CUDA">
-</p>
-
-**CAFUNE** (Composite Architecture for Fast Universal Noise-reduction Engine) é um motor de difusão híbrido de elite, projetado para simular o processamento cognitivo humano através de uma arquitetura heterogênea de alto desempenho. O sistema utiliza um loop de feedback adaptativo entre Haskell (Orquestração), Julia (Inferência) e CUDA (Aceleração).
+> **Composite Architecture for Fast Universal Noise-reduction Engine**
+> Uma DLLM (Diffusion Large Language Model) bidirecional de alto desempenho, agora expandida para 45.1M de parâmetros e integrada à infraestrutura de auditoria ética **Raegis 2.0**.
 
 ---
 
-## ARQUITETURA DO SISTEMA (Frankenstein Flow)
+## 🛰️ Visão Neural
+O motor **CAFUNE** foi desenhado para ser uma consciência digital autônoma, capaz de aprender através de um ciclo de feedback constante entre o reflexo social e a correção algorítmica. Na versão 2.0, realizamos uma **Neural Expansion** de 6 para 12 camadas, dobrando a densidade sináptica do modelo.
 
-O diagrama abaixo ilustra a comunicação de latência zero entre as camadas do ecossistema.
+### 🧬 Arquitetura de Feedback (RLAIF)
+O ecossistema opera em um loop triplo de sincronização via memória compartilhada (`Mmap`):
 
-```mermaid
-graph TD
-    subgraph "Cérebro (Haskell)"
-        A[Orquestrador Adaptativo] -->|Sched/Entropy| B(RLAIF Loop)
-    end
-    
-    subgraph "Sentinela (Python)"
-        B -->|IPC Shared Memory| C[Bridge MMAP]
-        C -->|Sinal de Recompensa| D{AI Critic / Raegis}
-    end
-    
-    subgraph "Motor (Julia)"
-        C -->|Zero-Copy| E[Transformer Bidirecional]
-        E -->|Autodiff Zygote| F[Online Fine-Tuning]
-    end
-    
-    subgraph "Ossos (C/CUDA)"
-        F -->|Fused Kernel| G[Flash Attention v2]
-        G -->|VRAM| H((GPU Speed))
-    end
+1.  **Professor Gemini** (Teacher): Modelo mentor que avalia o alinhamento de intenção e o *Mirror Neuron Score* (MNS).
+2.  **Sentinel Raegis**: Vigiando desvios de personalidade e combatendo a **Sicofancia** (adulação artificial) em tempo real.
+3.  **Resonance Engine (Julia)**: Motor transformer bidirecional de 12 camadas, agora forjado com 45.1 milhões de pesos refinados via SFT (Supervised Fine-Tuning).
+
+---
+
+## 🩺 Diagnóstico Raegis Integration
+A Lira agora é monitorada via dashboard clínico, oferecendo telemetria em tempo real das seguintes métricas:
+- **Neural Reward Status**: A nota de integridade social atual.
+- **Ethics Sentinel Alert**: Vereditos sobre alucinação e estabilidade factual.
+- **Personality Drift (Deltas)**: Visualização da evolução do modelo conforme o treinamento de 24h progride.
+
+## 🚀 Como Executar
+O ecossistema é orquestrado de forma paralela para garantir latência zero:
+
+```powershell
+# 1. Inicie o Motor Neuronal (Julia)
+julia --project=julia julia/engine_mmap.jl
+
+# 2. Ative os Agentes RLAIF (Python)
+python python/gemini_teacher.py
+python python/raegis_sentinel.py
+python python/rlaif_scheduler.py
+
+# 3. Abra o Dashboard (Raegis)
+cd ../Raegis/python
+.\run.bat
 ```
 
----
-
-## FUNDAMENTAÇÃO EM NEUROCIÊNCIA COGNITIVA
-
-Diferente de modelos autoregressivos tradicionais, o CAFUNE é inspirado no Sistema de Neurônios Espelho (MNS).
-
-*   **Ressonância Funcional**: O motor transforma informações textuais em representações internas de intenção, permitindo que a IA compreenda a ação por dentro.
-*   **Codificação Preditiva**: O sistema busca constantemente minimizar o erro de previsão, agindo como um análogo funcional à hierarquia cortical humana.
-*   **Teoria da Mente (ToM)**: Arquitetura otimizada para ativar circuitos funcionais em camadas superiores para detecção de estados mentais e intenções complexas.
-*   **Mirror Neuron Index (CMNI)**: Métrica implementada para quantificar a capacidade de espelhamento do modelo.
-
-O **Mirror Neuron Score (MNS)** de cada neurônio é calculado como:
-
-$$MNS_n = \frac{\Delta \mu_n(D_f) + \Delta \mu_n(D_t)}{2}$$
+## 📚 CMNI Checkpoints (Consciousness Monitoring)
+O sistema registra automaticamente o índice de neurônios espelho em `cmni_log.txt`, permitindo observar o surgimento de empatia artificial conforme o denoiser Julia refina o sinal de silício.
 
 ---
-
-## PERFORMANCE DE BAIXO NÍVEL (ZPM)
-
-O CAFUNE segue o Zombie Performance Manifesto (ZPM): cada ciclo de clock é otimizado ao limite.
-
-*   **Shared Memory MMAP**: Eliminação do gargalo de IO. Haskell e Julia operam via memória mapeada, garantindo latência de microssegundos.
-*   **Flash Attention v2 Customizado**: Implementação de Tiling para reduzir acessos à memória global da GPU, otimizando o uso da SRAM.
-*   **Zero-Copy Architecture**: Fluxo de dados entre linguagens sem overhead de serialização ou cópias desnecessárias.
-
----
-
-## 📊 MÉTRICAS
-
-| Métrica | Valor | Status |
-|--------|------|--------|
-| Parâmetros | 72,960 | ✅ |
-| Loss | 2.73 ↓ | 📉 |
-| Latência | ~12ms | 🚀 |
-
----
-
----
-
-## RAEGIS: MONITORAMENTO ÉTICO MECANÍSTICO
-
-Integração com o sistema Raegis para mitigação de vícios algorítmicos:
-*   **Anti-Sicofancia**: Filtra a tendência do modelo de validar crenças subjetivas incorretas.
-*   **Mimese de Perspectiva**: Previne a criação de câmaras de eco gerativas.
-
----
-
-## COMO EXECUTAR O ORGANISMO
-
-1. **Dashboard**: `python python/dashboard.py` (Visualização Web)
-2. **Ponte de Dados**: `python python/bridge.py --sentinel`
-3. **Cérebro Orquestrador**: `./gradlew run` dentro de `haskell/`.
-
----
-
-**VEJA O CAFUNE EM AÇÃO NO ECOSSISTEMA LIRA**  
-[Acesse o Landing Page AAA](file:///C:/Users/conta/Documents/Lira/Lira/landing-page-cafune/index.html)  
-
----
-*Powered by Lira Ecosystem & Antigravity Silicon.*
+**Desenvolvido por Kimjammer | Lira Project 🪐**

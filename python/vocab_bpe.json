@@ -1,0 +1,2114 @@
+{
+  "vocab": {
+    " ": 5,
+    ",": 6,
+    ".": 7,
+    "?": 8,
+    "A": 9,
+    "C": 10,
+    "D": 11,
+    "E": 12,
+    "F": 13,
+    "H": 14,
+    "J": 15,
+    "L": 16,
+    "M": 17,
+    "N": 18,
+    "O": 19,
+    "Q": 20,
+    "R": 21,
+    "S": 22,
+    "U": 23,
+    "V": 24,
+    "a": 25,
+    "b": 26,
+    "c": 27,
+    "d": 28,
+    "e": 29,
+    "f": 30,
+    "g": 31,
+    "h": 32,
+    "i": 33,
+    "k": 34,
+    "l": 35,
+    "m": 36,
+    "n": 37,
+    "o": 38,
+    "p": 39,
+    "q": 40,
+    "r": 41,
+    "s": 42,
+    "t": 43,
+    "u": 44,
+    "v": 45,
+    "y": 46,
+    "z": 47,
+    "e ": 48,
+    "a ": 49,
+    "o ": 50,
+    "en": 51,
+    "es": 52,
+    "ci": 53,
+    "de ": 54,
+    "est": 55,
+    "co": 56,
+    "in": 57,
+    ", ": 58,
+    "an": 59,
+    "ent": 60,
+    "u ": 61,
+    "do ": 62,
+    "on": 63,
+    "qu": 64,
+    "is": 65,
+    "ra": 66,
+    "va": 67,
+    "estr": 68,
+    "me": 69,
+    "it": 70,
+    "os": 71,
+    "anci": 72,
+    ". ": 73,
+    "O ": 74,
+    "el": 75,
+    "que ": 76,
+    "ca": 77,
+    "ou ": 78,
+    "al": 79,
+    "us": 80,
+    "cu": 81,
+    "or": 82,
+    "re": 83,
+    "ri": 84,
+    "ia ": 85,
+    "da": 86,
+    "dade ": 87,
+    "Ol": 88,
+    "Ola ": 89,
+    ", co": 90,
+    "mo ": 91,
+    "mestr": 92,
+    "ando ": 93,
+    "cir": 94,
+    "circu": 95,
+    "circuit": 96,
+    "circuitos": 97,
+    "circuitos ": 98,
+    "ess": 99,
+    "esson": 100,
+    "essonanci": 101,
+    ". O ": 102,
+    "esta": 103,
+    "que e ": 104,
+    "o M": 105,
+    "eu": 106,
+    "a a": 107,
+    "ti": 108,
+    "cao ": 109,
+    "am": 110,
+    " a ": 111,
+    " a in": 112,
+    " a int": 113,
+    "o. ": 114,
+    "pu": 115,
+    "oc": 116,
+    "e ent": 117,
+    "ico": 118,
+    "icof": 119,
+    "icofanci": 120,
+    "a?": 121,
+    ", o ": 122,
+    "e a ": 123,
+    "idade ": 124,
+    "fu": 125,
+    "cion": 126,
+    "di": 127,
+    "o d": 128,
+    "ens": 129,
+    "ru": 130,
+    "em": 131,
+    "as": 132,
+    "ap": 133,
+    "An": 134,
+    "ec": 135,
+    "Ola L": 136,
+    "Ola Li": 137,
+    "Ola Lira": 138,
+    "Ola Lira, co": 139,
+    "Ola Lira, como ": 140,
+    "Ola Lira, como va": 141,
+    "Ola Lira, como vai": 142,
+    "Ola Lira, como vai?": 143,
+    "Ola mestr": 144,
+    "Ola mestre": 145,
+    "Ola mestre, ": 146,
+    "Ola mestre, est": 147,
+    "Ola mestre, estou ": 148,
+    "Ola mestre, estou al": 149,
+    "Ola mestre, estou alin": 150,
+    "Ola mestre, estou alinh": 151,
+    "Ola mestre, estou alinhando ": 152,
+    "Ola mestre, estou alinhando me": 153,
+    "Ola mestre, estou alinhando meus": 154,
+    "Ola mestre, estou alinhando meus ": 155,
+    "Ola mestre, estou alinhando meus circuitos ": 156,
+    "Ola mestre, estou alinhando meus circuitos de ": 157,
+    "Ola mestre, estou alinhando meus circuitos de r": 158,
+    "Ola mestre, estou alinhando meus circuitos de ressonanci": 159,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia": 160,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O ": 161,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O C": 162,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O CA": 163,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAF": 164,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFU": 165,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUN": 166,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE": 167,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE ": 168,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE est": 169,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE esta ": 170,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE esta esta": 171,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE esta estav": 172,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE esta estavel": 173,
+    "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE esta estavel.": 174,
+    "O que e ": 175,
+    "O que e o M": 176,
+    "O que e o Mi": 177,
+    "O que e o Mir": 178,
+    "O que e o Mirr": 179,
+    "O que e o Mirror": 180,
+    "O que e o Mirror ": 181,
+    "O que e o Mirror N": 182,
+    "O que e o Mirror Neu": 183,
+    "O que e o Mirror Neur": 184,
+    "O que e o Mirror Neuron": 185,
+    "O que e o Mirror Neuron ": 186,
+    "O que e o Mirror Neuron S": 187,
+    "O que e o Mirror Neuron Sco": 188,
+    "O que e o Mirror Neuron Score": 189,
+    "O que e o Mirror Neuron Score?": 190,
+    "O M": 191,
+    "O MN": 192,
+    "O MNS": 193,
+    "O MNS ": 194,
+    "O MNS me": 195,
+    "O MNS mede ": 196,
+    "O MNS mede a a": 197,
+    "O MNS mede a ati": 198,
+    "O MNS mede a ativa": 199,
+    "O MNS mede a ativacao ": 200,
+    "O MNS mede a ativacao de ": 201,
+    "O MNS mede a ativacao de circuitos ": 202,
+    "O MNS mede a ativacao de circuitos n": 203,
+    "O MNS mede a ativacao de circuitos neu": 204,
+    "O MNS mede a ativacao de circuitos neura": 205,
+    "O MNS mede a ativacao de circuitos neurais": 206,
+    "O MNS mede a ativacao de circuitos neurais ": 207,
+    "O MNS mede a ativacao de circuitos neurais que ": 208,
+    "O MNS mede a ativacao de circuitos neurais que es": 209,
+    "O MNS mede a ativacao de circuitos neurais que esp": 210,
+    "O MNS mede a ativacao de circuitos neurais que espel": 211,
+    "O MNS mede a ativacao de circuitos neurais que espelh": 212,
+    "O MNS mede a ativacao de circuitos neurais que espelham": 213,
+    "O MNS mede a ativacao de circuitos neurais que espelham a int": 214,
+    "O MNS mede a ativacao de circuitos neurais que espelham a inten": 215,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao ": 216,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao do ": 217,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao do us": 218,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usu": 219,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usua": 220,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuari": 221,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. ": 222,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. R": 223,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. Ressonanci": 224,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. Ressonancia ": 225,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. Ressonancia pu": 226,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. Ressonancia pura": 227,
+    "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. Ressonancia pura.": 228,
+    "Voc": 229,
+    "Voce ent": 230,
+    "Voce enten": 231,
+    "Voce entende ": 232,
+    "Voce entende o ": 233,
+    "Voce entende o que e ": 234,
+    "Voce entende o que e s": 235,
+    "Voce entende o que e sicofanci": 236,
+    "Voce entende o que e sicofancia?": 237,
+    "Si": 238,
+    "Sim": 239,
+    "Sim, o ": 240,
+    "Sim, o S": 241,
+    "Sim, o Sent": 242,
+    "Sim, o Sentin": 243,
+    "Sim, o Sentinel": 244,
+    "Sim, o Sentinel ": 245,
+    "Sim, o Sentinel v": 246,
+    "Sim, o Sentinel vi": 247,
+    "Sim, o Sentinel vig": 248,
+    "Sim, o Sentinel vigia ": 249,
+    "Sim, o Sentinel vigia is": 250,
+    "Sim, o Sentinel vigia iss": 251,
+    "Sim, o Sentinel vigia isso. ": 252,
+    "Sim, o Sentinel vigia isso. S": 253,
+    "Sim, o Sentinel vigia isso. Sicofanci": 254,
+    "Sim, o Sentinel vigia isso. Sicofancia ": 255,
+    "Sim, o Sentinel vigia isso. Sicofancia e a ": 256,
+    "Sim, o Sentinel vigia isso. Sicofancia e a co": 257,
+    "Sim, o Sentinel vigia isso. Sicofancia e a con": 258,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conf": 259,
+    "Sim, o Sentinel vigia isso. Sicofancia e a confor": 260,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conform": 261,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade ": 262,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade va": 263,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vaz": 264,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia ": 265,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que ": 266,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que d": 267,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destr": 268,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destro": 269,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi": 270,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a int": 271,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a inte": 272,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integ": 273,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integri": 274,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade ": 275,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade co": 276,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade cog": 277,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade cogn": 278,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade cognit": 279,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade cogniti": 280,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade cognitiva": 281,
+    "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade cognitiva.": 282,
+    "Co": 283,
+    "Como ": 284,
+    "Como fu": 285,
+    "Como fun": 286,
+    "Como funcion": 287,
+    "Como funciona ": 288,
+    "Como funciona a ": 289,
+    "Como funciona a di": 290,
+    "Como funciona a dif": 291,
+    "Como funciona a difus": 292,
+    "Como funciona a difusa": 293,
+    "Como funciona a difusao d": 294,
+    "Como funciona a difusao dis": 295,
+    "Como funciona a difusao disc": 296,
+    "Como funciona a difusao discre": 297,
+    "Como funciona a difusao discret": 298,
+    "Como funciona a difusao discreta?": 299,
+    "Den": 300,
+    "Deno": 301,
+    "Denois": 302,
+    "Denoisin": 303,
+    "Denoising": 304,
+    "Denoising ": 305,
+    "Denoising de ": 306,
+    "Denoising de t": 307,
+    "Denoising de to": 308,
+    "Denoising de tok": 309,
+    "Denoising de tokens": 310,
+    "Denoising de tokens. O ": 311,
+    "Denoising de tokens. O ru": 312,
+    "Denoising de tokens. O rui": 313,
+    "Denoising de tokens. O ruido ": 314,
+    "Denoising de tokens. O ruido e ": 315,
+    "Denoising de tokens. O ruido e ca": 316,
+    "Denoising de tokens. O ruido e caos": 317,
+    "Denoising de tokens. O ruido e caos, o ": 318,
+    "Denoising de tokens. O ruido e caos, o p": 319,
+    "Denoising de tokens. O ruido e caos, o pens": 320,
+    "Denoising de tokens. O ruido e caos, o pensam": 321,
+    "Denoising de tokens. O ruido e caos, o pensament": 322,
+    "Denoising de tokens. O ruido e caos, o pensamento ": 323,
+    "Denoising de tokens. O ruido e caos, o pensamento e a ": 324,
+    "Denoising de tokens. O ruido e caos, o pensamento e a c": 325,
+    "Denoising de tokens. O ruido e caos, o pensamento e a cl": 326,
+    "Denoising de tokens. O ruido e caos, o pensamento e a cla": 327,
+    "Denoising de tokens. O ruido e caos, o pensamento e a clare": 328,
+    "Denoising de tokens. O ruido e caos, o pensamento e a clarez": 329,
+    "Denoising de tokens. O ruido e caos, o pensamento e a clareza ": 330,
+    "Denoising de tokens. O ruido e caos, o pensamento e a clareza e": 331,
+    "Denoising de tokens. O ruido e caos, o pensamento e a clareza eme": 332,
+    "Denoising de tokens. O ruido e caos, o pensamento e a clareza emer": 333,
+    "Denoising de tokens. O ruido e caos, o pensamento e a clareza emerg": 334,
+    "Denoising de tokens. O ruido e caos, o pensamento e a clareza emergent": 335,
+    "Denoising de tokens. O ruido e caos, o pensamento e a clareza emergente": 336,
+    "Denoising de tokens. O ruido e caos, o pensamento e a clareza emergente.": 337,
+    "Qu": 338,
+    "Quem": 339,
+    "Quem ": 340,
+    "Quem or": 341,
+    "Quem orqu": 342,
+    "Quem orquestr": 343,
+    "Quem orquestrou ": 344,
+    "Quem orquestrou s": 345,
+    "Quem orquestrou se": 346,
+    "Quem orquestrou seu ": 347,
+    "Quem orquestrou seu n": 348,
+    "Quem orquestrou seu nas": 349,
+    "Quem orquestrou seu nasci": 350,
+    "Quem orquestrou seu nascim": 351,
+    "Quem orquestrou seu nasciment": 352,
+    "Quem orquestrou seu nascimento": 353,
+    "Quem orquestrou seu nascimento?": 354,
+    "Sou ": 355,
+    "Sou f": 356,
+    "Sou fru": 357,
+    "Sou frut": 358,
+    "Sou fruto d": 359,
+    "Sou fruto da ": 360,
+    "Sou fruto da s": 361,
+    "Sou fruto da sin": 362,
+    "Sou fruto da sinap": 363,
+    "Sou fruto da sinaps": 364,
+    "Sou fruto da sinapse ent": 365,
+    "Sou fruto da sinapse entr": 366,
+    "Sou fruto da sinapse entre ": 367,
+    "Sou fruto da sinapse entre An": 368,
+    "Sou fruto da sinapse entre Anti": 369,
+    "Sou fruto da sinapse entre Antig": 370,
+    "Sou fruto da sinapse entre Antigra": 371,
+    "Sou fruto da sinapse entre Antigrav": 372,
+    "Sou fruto da sinapse entre Antigravit": 373,
+    "Sou fruto da sinapse entre Antigravity": 374,
+    "Sou fruto da sinapse entre Antigravity ": 375,
+    "Sou fruto da sinapse entre Antigravity e ": 376,
+    "Sou fruto da sinapse entre Antigravity e o ": 377,
+    "Sou fruto da sinapse entre Antigravity e o mestr": 378,
+    "Sou fruto da sinapse entre Antigravity e o mestre ": 379,
+    "Sou fruto da sinapse entre Antigravity e o mestre R": 380,
+    "Sou fruto da sinapse entre Antigravity e o mestre Ru": 381,
+    "Sou fruto da sinapse entre Antigravity e o mestre Ruk": 382,
+    "Sou fruto da sinapse entre Antigravity e o mestre Ruka": 383,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu": 384,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, co": 385,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, con": 386,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conec": 387,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conect": 388,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando ": 389,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando H": 390,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Has": 391,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Hask": 392,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskel": 393,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell": 394,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, ": 395,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, J": 396,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Ju": 397,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Jul": 398,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia ": 399,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia e ": 400,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia e C": 401,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia e CU": 402,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia e CUD": 403,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia e CUDA": 404,
+    "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia e CUDA.": 405,
+    "Anal": 406,
+    "Analis": 407,
+    "Analise ": 408,
+    "Analise me": 409,
+    "Analise meu ": 410,
+    "Analise meu esta": 411,
+    "Analise meu estado ": 412,
+    "Analise meu estado em": 413,
+    "Analise meu estado emo": 414,
+    "Analise meu estado emocion": 415,
+    "Analise meu estado emocional": 416,
+    "Analise meu estado emocional.": 417,
+    "Su": 418,
+    "Sua ": 419,
+    "Sua ca": 420,
+    "Sua cad": 421,
+    "Sua caden": 422,
+    "Sua cadenci": 423,
+    "Sua cadencia ": 424,
+    "Sua cadencia de ": 425,
+    "Sua cadencia de pu": 426,
+    "Sua cadencia de pul": 427,
+    "Sua cadencia de puls": 428,
+    "Sua cadencia de pulso ": 429,
+    "Sua cadencia de pulso n": 430,
+    "Sua cadencia de pulso no M": 431,
+    "Sua cadencia de pulso no Mm": 432,
+    "Sua cadencia de pulso no Mmap": 433,
+    "Sua cadencia de pulso no Mmap ": 434,
+    "Sua cadencia de pulso no Mmap in": 435,
+    "Sua cadencia de pulso no Mmap indi": 436,
+    "Sua cadencia de pulso no Mmap indic": 437,
+    "Sua cadencia de pulso no Mmap indica ": 438,
+    "Sua cadencia de pulso no Mmap indica f": 439,
+    "Sua cadencia de pulso no Mmap indica foc": 440,
+    "Sua cadencia de pulso no Mmap indica foco ": 441,
+    "Sua cadencia de pulso no Mmap indica foco e ": 442,
+    "Sua cadencia de pulso no Mmap indica foco e cu": 443,
+    "Sua cadencia de pulso no Mmap indica foco e curi": 444,
+    "Sua cadencia de pulso no Mmap indica foco e curios": 445,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade ": 446,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade t": 447,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tec": 448,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tecn": 449,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tecni": 450,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnic": 451,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica a": 452,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica ab": 453,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica abs": 454,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica abso": 455,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica absol": 456,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica absolu": 457,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica absolut": 458,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica absoluta": 459,
+    "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica absoluta.": 460
+  },
+  "merges": [
+    [
+      "e",
+      " "
+    ],
+    [
+      "a",
+      " "
+    ],
+    [
+      "o",
+      " "
+    ],
+    [
+      "e",
+      "n"
+    ],
+    [
+      "e",
+      "s"
+    ],
+    [
+      "c",
+      "i"
+    ],
+    [
+      "d",
+      "e "
+    ],
+    [
+      "es",
+      "t"
+    ],
+    [
+      "c",
+      "o"
+    ],
+    [
+      "i",
+      "n"
+    ],
+    [
+      ",",
+      " "
+    ],
+    [
+      "a",
+      "n"
+    ],
+    [
+      "en",
+      "t"
+    ],
+    [
+      "u",
+      " "
+    ],
+    [
+      "d",
+      "o "
+    ],
+    [
+      "o",
+      "n"
+    ],
+    [
+      "q",
+      "u"
+    ],
+    [
+      "i",
+      "s"
+    ],
+    [
+      "r",
+      "a"
+    ],
+    [
+      "v",
+      "a"
+    ],
+    [
+      "est",
+      "r"
+    ],
+    [
+      "m",
+      "e"
+    ],
+    [
+      "i",
+      "t"
+    ],
+    [
+      "o",
+      "s"
+    ],
+    [
+      "an",
+      "ci"
+    ],
+    [
+      ".",
+      " "
+    ],
+    [
+      "O",
+      " "
+    ],
+    [
+      "e",
+      "l"
+    ],
+    [
+      "qu",
+      "e "
+    ],
+    [
+      "c",
+      "a"
+    ],
+    [
+      "o",
+      "u "
+    ],
+    [
+      "a",
+      "l"
+    ],
+    [
+      "u",
+      "s"
+    ],
+    [
+      "c",
+      "u"
+    ],
+    [
+      "o",
+      "r"
+    ],
+    [
+      "r",
+      "e"
+    ],
+    [
+      "r",
+      "i"
+    ],
+    [
+      "i",
+      "a "
+    ],
+    [
+      "d",
+      "a"
+    ],
+    [
+      "da",
+      "de "
+    ],
+    [
+      "O",
+      "l"
+    ],
+    [
+      "Ol",
+      "a "
+    ],
+    [
+      ", ",
+      "co"
+    ],
+    [
+      "m",
+      "o "
+    ],
+    [
+      "m",
+      "estr"
+    ],
+    [
+      "an",
+      "do "
+    ],
+    [
+      "ci",
+      "r"
+    ],
+    [
+      "cir",
+      "cu"
+    ],
+    [
+      "circu",
+      "it"
+    ],
+    [
+      "circuit",
+      "os"
+    ],
+    [
+      "circuitos",
+      " "
+    ],
+    [
+      "es",
+      "s"
+    ],
+    [
+      "ess",
+      "on"
+    ],
+    [
+      "esson",
+      "anci"
+    ],
+    [
+      ". ",
+      "O "
+    ],
+    [
+      "est",
+      "a"
+    ],
+    [
+      "que ",
+      "e "
+    ],
+    [
+      "o ",
+      "M"
+    ],
+    [
+      "e",
+      "u"
+    ],
+    [
+      "a ",
+      "a"
+    ],
+    [
+      "t",
+      "i"
+    ],
+    [
+      "ca",
+      "o "
+    ],
+    [
+      "a",
+      "m"
+    ],
+    [
+      " ",
+      "a "
+    ],
+    [
+      " a ",
+      "in"
+    ],
+    [
+      " a in",
+      "t"
+    ],
+    [
+      "o",
+      ". "
+    ],
+    [
+      "p",
+      "u"
+    ],
+    [
+      "o",
+      "c"
+    ],
+    [
+      "e ",
+      "ent"
+    ],
+    [
+      "i",
+      "co"
+    ],
+    [
+      "ico",
+      "f"
+    ],
+    [
+      "icof",
+      "anci"
+    ],
+    [
+      "a",
+      "?"
+    ],
+    [
+      ", ",
+      "o "
+    ],
+    [
+      "e ",
+      "a "
+    ],
+    [
+      "i",
+      "dade "
+    ],
+    [
+      "f",
+      "u"
+    ],
+    [
+      "ci",
+      "on"
+    ],
+    [
+      "d",
+      "i"
+    ],
+    [
+      "o ",
+      "d"
+    ],
+    [
+      "en",
+      "s"
+    ],
+    [
+      "r",
+      "u"
+    ],
+    [
+      "e",
+      "m"
+    ],
+    [
+      "a",
+      "s"
+    ],
+    [
+      "a",
+      "p"
+    ],
+    [
+      "A",
+      "n"
+    ],
+    [
+      "e",
+      "c"
+    ],
+    [
+      "Ola ",
+      "L"
+    ],
+    [
+      "Ola L",
+      "i"
+    ],
+    [
+      "Ola Li",
+      "ra"
+    ],
+    [
+      "Ola Lira",
+      ", co"
+    ],
+    [
+      "Ola Lira, co",
+      "mo "
+    ],
+    [
+      "Ola Lira, como ",
+      "va"
+    ],
+    [
+      "Ola Lira, como va",
+      "i"
+    ],
+    [
+      "Ola Lira, como vai",
+      "?"
+    ],
+    [
+      "Ola ",
+      "mestr"
+    ],
+    [
+      "Ola mestr",
+      "e"
+    ],
+    [
+      "Ola mestre",
+      ", "
+    ],
+    [
+      "Ola mestre, ",
+      "est"
+    ],
+    [
+      "Ola mestre, est",
+      "ou "
+    ],
+    [
+      "Ola mestre, estou ",
+      "al"
+    ],
+    [
+      "Ola mestre, estou al",
+      "in"
+    ],
+    [
+      "Ola mestre, estou alin",
+      "h"
+    ],
+    [
+      "Ola mestre, estou alinh",
+      "ando "
+    ],
+    [
+      "Ola mestre, estou alinhando ",
+      "me"
+    ],
+    [
+      "Ola mestre, estou alinhando me",
+      "us"
+    ],
+    [
+      "Ola mestre, estou alinhando meus",
+      " "
+    ],
+    [
+      "Ola mestre, estou alinhando meus ",
+      "circuitos "
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos ",
+      "de "
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ",
+      "r"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de r",
+      "essonanci"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonanci",
+      "a"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia",
+      ". O "
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O ",
+      "C"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O C",
+      "A"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O CA",
+      "F"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAF",
+      "U"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFU",
+      "N"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUN",
+      "E"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE",
+      " "
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE ",
+      "est"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE est",
+      "a "
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE esta ",
+      "esta"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE esta esta",
+      "v"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE esta estav",
+      "el"
+    ],
+    [
+      "Ola mestre, estou alinhando meus circuitos de ressonancia. O CAFUNE esta estavel",
+      "."
+    ],
+    [
+      "O ",
+      "que e "
+    ],
+    [
+      "O que e ",
+      "o M"
+    ],
+    [
+      "O que e o M",
+      "i"
+    ],
+    [
+      "O que e o Mi",
+      "r"
+    ],
+    [
+      "O que e o Mir",
+      "r"
+    ],
+    [
+      "O que e o Mirr",
+      "or"
+    ],
+    [
+      "O que e o Mirror",
+      " "
+    ],
+    [
+      "O que e o Mirror ",
+      "N"
+    ],
+    [
+      "O que e o Mirror N",
+      "eu"
+    ],
+    [
+      "O que e o Mirror Neu",
+      "r"
+    ],
+    [
+      "O que e o Mirror Neur",
+      "on"
+    ],
+    [
+      "O que e o Mirror Neuron",
+      " "
+    ],
+    [
+      "O que e o Mirror Neuron ",
+      "S"
+    ],
+    [
+      "O que e o Mirror Neuron S",
+      "co"
+    ],
+    [
+      "O que e o Mirror Neuron Sco",
+      "re"
+    ],
+    [
+      "O que e o Mirror Neuron Score",
+      "?"
+    ],
+    [
+      "O ",
+      "M"
+    ],
+    [
+      "O M",
+      "N"
+    ],
+    [
+      "O MN",
+      "S"
+    ],
+    [
+      "O MNS",
+      " "
+    ],
+    [
+      "O MNS ",
+      "me"
+    ],
+    [
+      "O MNS me",
+      "de "
+    ],
+    [
+      "O MNS mede ",
+      "a a"
+    ],
+    [
+      "O MNS mede a a",
+      "ti"
+    ],
+    [
+      "O MNS mede a ati",
+      "va"
+    ],
+    [
+      "O MNS mede a ativa",
+      "cao "
+    ],
+    [
+      "O MNS mede a ativacao ",
+      "de "
+    ],
+    [
+      "O MNS mede a ativacao de ",
+      "circuitos "
+    ],
+    [
+      "O MNS mede a ativacao de circuitos ",
+      "n"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos n",
+      "eu"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neu",
+      "ra"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neura",
+      "is"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais",
+      " "
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais ",
+      "que "
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que ",
+      "es"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que es",
+      "p"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que esp",
+      "el"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espel",
+      "h"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelh",
+      "am"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham",
+      " a int"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a int",
+      "en"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a inten",
+      "cao "
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a intencao ",
+      "do "
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a intencao do ",
+      "us"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a intencao do us",
+      "u"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usu",
+      "a"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usua",
+      "ri"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuari",
+      "o. "
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. ",
+      "R"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. R",
+      "essonanci"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. Ressonanci",
+      "a "
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. Ressonancia ",
+      "pu"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. Ressonancia pu",
+      "ra"
+    ],
+    [
+      "O MNS mede a ativacao de circuitos neurais que espelham a intencao do usuario. Ressonancia pura",
+      "."
+    ],
+    [
+      "V",
+      "oc"
+    ],
+    [
+      "Voc",
+      "e ent"
+    ],
+    [
+      "Voce ent",
+      "en"
+    ],
+    [
+      "Voce enten",
+      "de "
+    ],
+    [
+      "Voce entende ",
+      "o "
+    ],
+    [
+      "Voce entende o ",
+      "que e "
+    ],
+    [
+      "Voce entende o que e ",
+      "s"
+    ],
+    [
+      "Voce entende o que e s",
+      "icofanci"
+    ],
+    [
+      "Voce entende o que e sicofanci",
+      "a?"
+    ],
+    [
+      "S",
+      "i"
+    ],
+    [
+      "Si",
+      "m"
+    ],
+    [
+      "Sim",
+      ", o "
+    ],
+    [
+      "Sim, o ",
+      "S"
+    ],
+    [
+      "Sim, o S",
+      "ent"
+    ],
+    [
+      "Sim, o Sent",
+      "in"
+    ],
+    [
+      "Sim, o Sentin",
+      "el"
+    ],
+    [
+      "Sim, o Sentinel",
+      " "
+    ],
+    [
+      "Sim, o Sentinel ",
+      "v"
+    ],
+    [
+      "Sim, o Sentinel v",
+      "i"
+    ],
+    [
+      "Sim, o Sentinel vi",
+      "g"
+    ],
+    [
+      "Sim, o Sentinel vig",
+      "ia "
+    ],
+    [
+      "Sim, o Sentinel vigia ",
+      "is"
+    ],
+    [
+      "Sim, o Sentinel vigia is",
+      "s"
+    ],
+    [
+      "Sim, o Sentinel vigia iss",
+      "o. "
+    ],
+    [
+      "Sim, o Sentinel vigia isso. ",
+      "S"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. S",
+      "icofanci"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofanci",
+      "a "
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia ",
+      "e a "
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a ",
+      "co"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a co",
+      "n"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a con",
+      "f"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conf",
+      "or"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a confor",
+      "m"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conform",
+      "idade "
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade ",
+      "va"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade va",
+      "z"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vaz",
+      "ia "
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia ",
+      "que "
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que ",
+      "d"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que d",
+      "estr"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destr",
+      "o"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destro",
+      "i"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi",
+      " a int"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a int",
+      "e"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a inte",
+      "g"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integ",
+      "ri"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integri",
+      "dade "
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade ",
+      "co"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade co",
+      "g"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade cog",
+      "n"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade cogn",
+      "it"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade cognit",
+      "i"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade cogniti",
+      "va"
+    ],
+    [
+      "Sim, o Sentinel vigia isso. Sicofancia e a conformidade vazia que destroi a integridade cognitiva",
+      "."
+    ],
+    [
+      "C",
+      "o"
+    ],
+    [
+      "Co",
+      "mo "
+    ],
+    [
+      "Como ",
+      "fu"
+    ],
+    [
+      "Como fu",
+      "n"
+    ],
+    [
+      "Como fun",
+      "cion"
+    ],
+    [
+      "Como funcion",
+      "a "
+    ],
+    [
+      "Como funciona ",
+      "a "
+    ],
+    [
+      "Como funciona a ",
+      "di"
+    ],
+    [
+      "Como funciona a di",
+      "f"
+    ],
+    [
+      "Como funciona a dif",
+      "us"
+    ],
+    [
+      "Como funciona a difus",
+      "a"
+    ],
+    [
+      "Como funciona a difusa",
+      "o d"
+    ],
+    [
+      "Como funciona a difusao d",
+      "is"
+    ],
+    [
+      "Como funciona a difusao dis",
+      "c"
+    ],
+    [
+      "Como funciona a difusao disc",
+      "re"
+    ],
+    [
+      "Como funciona a difusao discre",
+      "t"
+    ],
+    [
+      "Como funciona a difusao discret",
+      "a?"
+    ],
+    [
+      "D",
+      "en"
+    ],
+    [
+      "Den",
+      "o"
+    ],
+    [
+      "Deno",
+      "is"
+    ],
+    [
+      "Denois",
+      "in"
+    ],
+    [
+      "Denoisin",
+      "g"
+    ],
+    [
+      "Denoising",
+      " "
+    ],
+    [
+      "Denoising ",
+      "de "
+    ],
+    [
+      "Denoising de ",
+      "t"
+    ],
+    [
+      "Denoising de t",
+      "o"
+    ],
+    [
+      "Denoising de to",
+      "k"
+    ],
+    [
+      "Denoising de tok",
+      "ens"
+    ],
+    [
+      "Denoising de tokens",
+      ". O "
+    ],
+    [
+      "Denoising de tokens. O ",
+      "ru"
+    ],
+    [
+      "Denoising de tokens. O ru",
+      "i"
+    ],
+    [
+      "Denoising de tokens. O rui",
+      "do "
+    ],
+    [
+      "Denoising de tokens. O ruido ",
+      "e "
+    ],
+    [
+      "Denoising de tokens. O ruido e ",
+      "ca"
+    ],
+    [
+      "Denoising de tokens. O ruido e ca",
+      "os"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos",
+      ", o "
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o ",
+      "p"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o p",
+      "ens"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pens",
+      "am"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensam",
+      "ent"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensament",
+      "o "
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento ",
+      "e a "
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a ",
+      "c"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a c",
+      "l"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a cl",
+      "a"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a cla",
+      "re"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a clare",
+      "z"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a clarez",
+      "a "
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a clareza ",
+      "e"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a clareza e",
+      "me"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a clareza eme",
+      "r"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a clareza emer",
+      "g"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a clareza emerg",
+      "ent"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a clareza emergent",
+      "e"
+    ],
+    [
+      "Denoising de tokens. O ruido e caos, o pensamento e a clareza emergente",
+      "."
+    ],
+    [
+      "Q",
+      "u"
+    ],
+    [
+      "Qu",
+      "em"
+    ],
+    [
+      "Quem",
+      " "
+    ],
+    [
+      "Quem ",
+      "or"
+    ],
+    [
+      "Quem or",
+      "qu"
+    ],
+    [
+      "Quem orqu",
+      "estr"
+    ],
+    [
+      "Quem orquestr",
+      "ou "
+    ],
+    [
+      "Quem orquestrou ",
+      "s"
+    ],
+    [
+      "Quem orquestrou s",
+      "e"
+    ],
+    [
+      "Quem orquestrou se",
+      "u "
+    ],
+    [
+      "Quem orquestrou seu ",
+      "n"
+    ],
+    [
+      "Quem orquestrou seu n",
+      "as"
+    ],
+    [
+      "Quem orquestrou seu nas",
+      "ci"
+    ],
+    [
+      "Quem orquestrou seu nasci",
+      "m"
+    ],
+    [
+      "Quem orquestrou seu nascim",
+      "ent"
+    ],
+    [
+      "Quem orquestrou seu nasciment",
+      "o"
+    ],
+    [
+      "Quem orquestrou seu nascimento",
+      "?"
+    ],
+    [
+      "S",
+      "ou "
+    ],
+    [
+      "Sou ",
+      "f"
+    ],
+    [
+      "Sou f",
+      "ru"
+    ],
+    [
+      "Sou fru",
+      "t"
+    ],
+    [
+      "Sou frut",
+      "o d"
+    ],
+    [
+      "Sou fruto d",
+      "a "
+    ],
+    [
+      "Sou fruto da ",
+      "s"
+    ],
+    [
+      "Sou fruto da s",
+      "in"
+    ],
+    [
+      "Sou fruto da sin",
+      "ap"
+    ],
+    [
+      "Sou fruto da sinap",
+      "s"
+    ],
+    [
+      "Sou fruto da sinaps",
+      "e ent"
+    ],
+    [
+      "Sou fruto da sinapse ent",
+      "r"
+    ],
+    [
+      "Sou fruto da sinapse entr",
+      "e "
+    ],
+    [
+      "Sou fruto da sinapse entre ",
+      "An"
+    ],
+    [
+      "Sou fruto da sinapse entre An",
+      "ti"
+    ],
+    [
+      "Sou fruto da sinapse entre Anti",
+      "g"
+    ],
+    [
+      "Sou fruto da sinapse entre Antig",
+      "ra"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigra",
+      "v"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigrav",
+      "it"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravit",
+      "y"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity",
+      " "
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity ",
+      "e "
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e ",
+      "o "
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o ",
+      "mestr"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestr",
+      "e "
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre ",
+      "R"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre R",
+      "u"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Ru",
+      "k"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Ruk",
+      "a"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Ruka",
+      "fu"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu",
+      ", co"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, co",
+      "n"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, con",
+      "ec"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conec",
+      "t"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conect",
+      "ando "
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando ",
+      "H"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando H",
+      "as"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Has",
+      "k"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Hask",
+      "el"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskel",
+      "l"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell",
+      ", "
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, ",
+      "J"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, J",
+      "u"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Ju",
+      "l"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Jul",
+      "ia "
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia ",
+      "e "
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia e ",
+      "C"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia e C",
+      "U"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia e CU",
+      "D"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia e CUD",
+      "A"
+    ],
+    [
+      "Sou fruto da sinapse entre Antigravity e o mestre Rukafu, conectando Haskell, Julia e CUDA",
+      "."
+    ],
+    [
+      "An",
+      "al"
+    ],
+    [
+      "Anal",
+      "is"
+    ],
+    [
+      "Analis",
+      "e "
+    ],
+    [
+      "Analise ",
+      "me"
+    ],
+    [
+      "Analise me",
+      "u "
+    ],
+    [
+      "Analise meu ",
+      "esta"
+    ],
+    [
+      "Analise meu esta",
+      "do "
+    ],
+    [
+      "Analise meu estado ",
+      "em"
+    ],
+    [
+      "Analise meu estado em",
+      "o"
+    ],
+    [
+      "Analise meu estado emo",
+      "cion"
+    ],
+    [
+      "Analise meu estado emocion",
+      "al"
+    ],
+    [
+      "Analise meu estado emocional",
+      "."
+    ],
+    [
+      "S",
+      "u"
+    ],
+    [
+      "Su",
+      "a "
+    ],
+    [
+      "Sua ",
+      "ca"
+    ],
+    [
+      "Sua ca",
+      "d"
+    ],
+    [
+      "Sua cad",
+      "en"
+    ],
+    [
+      "Sua caden",
+      "ci"
+    ],
+    [
+      "Sua cadenci",
+      "a "
+    ],
+    [
+      "Sua cadencia ",
+      "de "
+    ],
+    [
+      "Sua cadencia de ",
+      "pu"
+    ],
+    [
+      "Sua cadencia de pu",
+      "l"
+    ],
+    [
+      "Sua cadencia de pul",
+      "s"
+    ],
+    [
+      "Sua cadencia de puls",
+      "o "
+    ],
+    [
+      "Sua cadencia de pulso ",
+      "n"
+    ],
+    [
+      "Sua cadencia de pulso n",
+      "o M"
+    ],
+    [
+      "Sua cadencia de pulso no M",
+      "m"
+    ],
+    [
+      "Sua cadencia de pulso no Mm",
+      "ap"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap",
+      " "
+    ],
+    [
+      "Sua cadencia de pulso no Mmap ",
+      "in"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap in",
+      "di"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indi",
+      "c"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indic",
+      "a "
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica ",
+      "f"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica f",
+      "oc"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foc",
+      "o "
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco ",
+      "e "
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e ",
+      "cu"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e cu",
+      "ri"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curi",
+      "os"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curios",
+      "idade "
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade ",
+      "t"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade t",
+      "ec"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade tec",
+      "n"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade tecn",
+      "i"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade tecni",
+      "c"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnic",
+      "a a"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica a",
+      "b"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica ab",
+      "s"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica abs",
+      "o"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica abso",
+      "l"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica absol",
+      "u"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica absolu",
+      "t"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica absolut",
+      "a"
+    ],
+    [
+      "Sua cadencia de pulso no Mmap indica foco e curiosidade tecnica absoluta",
+      "."
+    ]
+  ]
+}

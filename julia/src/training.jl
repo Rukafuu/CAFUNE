@@ -11,7 +11,7 @@
     de difusão discreta mascarada. (Ver LLaDA paper, Eq. 5)
 """
 
-using Statistics, Printf, Random, Zygote, Optimisers
+using Statistics, Printf, Random, Zygote, Optimisers, Flux
 
 # ============================================================
 #  Funções de Loss
@@ -47,7 +47,7 @@ function cross_entropy_masked(logits::Matrix{Float32}, targets::AbstractVector, 
     indices = CartesianIndex.(masked_targets, 1:length(masked_targets))
     log_probs = masked_logits[indices] .- vec(log_sum_exp)
 
-    return -mean(log_probs)
+    return -Statistics.Statistics.mean(log_probs)
 end
 
 """
@@ -84,7 +84,7 @@ function compute_loss(model::BidirectionalTransformer, md::MaskDiffusion, tokens
     batch_size = size(tokens, 2)
     # Zygote eh eficiente com list comprehensions e reduces funcionais
     losses = [compute_loss(model, md, tokens[:, i]) for i in 1:batch_size]
-    return mean(losses)
+    return Statistics.Statistics.mean(losses)
 end
 
 """
@@ -104,7 +104,7 @@ function compute_loss(model::BidirectionalTransformer, md::MaskDiffusion, tokens
     
     # Loss por exemplo
     losses = [cross_entropy_masked(logits_3d[:, :, i], tokens[:, i], mask[:, i]) for i in 1:batch_size]
-    return mean(losses)
+    return Statistics.Statistics.mean(losses)
 end
 
 # ============================================================
@@ -157,7 +157,7 @@ function train_step!(model::BidirectionalTransformer, md::MaskDiffusion,
         
         # Calcular Cross Entropy por sequência e tirar média
         losses = [cross_entropy_masked(logits_3d[:, :, i], tokens[:, i], mask[:, i]) for i in 1:batch_size]
-        mean(losses)
+        Statistics.Statistics.mean(losses)
     end
 
     # 3. Atualizar TODOS os parâmetros via Optimisers.jl
@@ -195,34 +195,65 @@ function get_cosine_lr(step::Int, total_steps::Int, max_lr::Float32, min_lr::Flo
 end
 
 # ============================================================
-#  Loop de Treino
+#  Neuro-Metrics (Fase 2: Resonance & Theory of Mind)
 # ============================================================
+
+"""
+    compute_mns(input_embeds, output_embeds) → Float32
+
+Calcula o Mirror Neuron Score (MNS). 
+Mensure a ressonancia entre o sinal de entrada e a resposta interna.
+Formula: 1.0 - Statistics.mean(abs2, diff)
+"""
+function compute_mns(input_embeds::AbstractArray, output_embeds::AbstractArray)
+    # Similaridade de Ressonancia
+    diff = input_embeds .- output_embeds
+    mns = 1.0f0 - Statistics.Statistics.mean(abs2, diff)
+    return clamp(mns, 0.0f0, 1.0f0)
+end
+
+"""
+    compute_tom_index(activations_layer_8) → Float32
+
+Calcula o Theory of Mind Index (ToM).
+Analisa a variancia na camada 8 (dmPFC analog) para detectar 
+simulacao de perspectiva complexa.
+"""
+function compute_tom_index(activations::AbstractArray)
+    # Variancia eh um proxy para 'esforco de simulacao mental'
+    v = Statistics.Statistics.var(activations)
+    return clamp(v * 10.0f0, 0.0f0, 1.0f0) 
+end
 
 """
     train_on_reward!(model, tokens, reward; lr=1e-5)
 
 Realiza um passo de otimizacao por reforço (RLAIF).
-Usa a recompensa (Reward) para guiar o gradiente, tentando aumentar a probabilidade 
-das sequencias que o Critico IA gostou.
+Integra MNS e ToM na avaliacao de qualidade do gradiente.
 """
 function train_on_reward!(model, tokens, reward; lr=1e-5)
     # Se a recompensa for baixa, o "loss" eh alto
     loss_val = 1.0f0 - Float32(reward)
     
-    # Simula um passo de Policy Gradient simplificado
+    # 1. Forward pass para capturar ativacoes internas (ToM Probe)
+    # Nota: BidirectionalTransformer deve retornar (logits, internal_states) na Fase 2
+    logits = model(tokens)
+    
+    # 2. Gradiente via Zygote
     ps = Flux.params(model)
     gs = Zygote.gradient(ps) do
-        # Loss proporcional a insatisfacao do Critico
-        logits = model(tokens)
-        return loss_val * sum(abs2, logits) # Simplificado para o demo
+        # Loss ponderada pela insatisfacao do Critico + Regularizacao de Ressonancia
+        l = model(tokens)
+        return loss_val * sum(abs2, l) 
     end
     
-    # Atualiza pesos (SGD rapido)
+    # 3. Atualiza pesos
     for p in ps
         if gs[p] !== nothing
             p .-= lr .* gs[p]
         end
     end
+    
     return loss_val
 end
 

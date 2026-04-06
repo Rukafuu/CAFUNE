@@ -15,7 +15,7 @@ diffusionLoop state
         let conf = max 0.0 (1.0 - (entropy / 4.0))
             
         -- 2. Log de Performance
-        putStrLn $ printf "📊 [Feedback] Confiança: %.2f | 🏅 Reward RLAIF: %.2f" conf reward
+        putStrLn $ printf "[Feedback] Confiança: %.2f | Reward RLAIF: %.2f" conf reward
         
         -- 3. Lógica de Reforço: Se reward for muito baixo, REPETIMOS o passo (Auto-Ajuste)
         let nextState = if reward < 0.3 && step state > 0
