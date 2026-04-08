@@ -13,6 +13,9 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Internal as BI
 
 -- | Dispara a inferencia e retorna (Entropia, Recompensa)
+-- ATENCAO: O lado Python usa filelock (cafune_brain.mem.lock) para exclusao mutua.
+-- Este lado Haskell nao adquire o mesmo lock — assuma acesso exclusivo por design
+-- (apenas um processo Haskell deve rodar por vez).
 dispatchInference :: Int -> Double -> ScheduleStrategy -> IO (Double, Double)
 dispatchInference t ratio strat = do
     putStrLn $ printf "🧠 [Orchestrator] Enviando Pulso [%s] | Passo %d | Ratio %.2f" 
