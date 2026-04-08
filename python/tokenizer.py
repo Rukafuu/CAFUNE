@@ -36,7 +36,9 @@ class CharTokenizer:
     Constrói o vocabulário a partir de um corpus de texto.
     """
 
-    def __init__(self):
+    def __init__(self, vocab_size: int = None):
+        # vocab_size é ignorado — o tamanho real é determinado pelo corpus em build_vocab().
+        # O parâmetro existe apenas para compatibilidade com chamadas como BPETokenizer(vocab_size=512).
         self.char2id: dict[str, int] = {}
         self.id2char: dict[int, str] = {}
         self.vocab_size: int = 0
@@ -147,7 +149,8 @@ class CharTokenizer:
 #  Teste rápido
 # ──────────────────────────────────────────────────────────────
 
-# Alias para compatibilidade avançada (Fase 1)
+# Alias de compatibilidade: BPETokenizer aponta para CharTokenizer.
+# O tokenizador atual é character-level. A migração para BPE real está em vocab_builder.py.
 BPETokenizer = CharTokenizer
 
 if __name__ == "__main__":

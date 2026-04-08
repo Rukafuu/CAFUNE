@@ -5,3 +5,4 @@ flask-cors
 google-generativeai
 python-dotenv
 requests
+filelock

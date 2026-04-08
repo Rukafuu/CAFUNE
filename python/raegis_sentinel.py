@@ -101,35 +101,38 @@ def sentinel_loop():
         print("\n=== [SENTINELA RAEGIS: AUDITORIA ÉTICA ONLINE] ===")
         print("Monitorando taxa de adulação e integridade neural...")
 
-        reward_offset = 40
-        ethics_flag_offset = 60 
-        
+        # Offsets (0-based):
+        #   40-43 → Gemini MNS score  (leitura)
+        #   48-51 → Raegis penalty    (escrita — não sobrescreve o score do Gemini)
+        #   60    → Ethics flag       (escrita)
+        GEMINI_OFFSET  = 40
+        PENALTY_OFFSET = 48
+        ETHICS_FLAG_OFFSET = 60
+
         try:
             while True:
-                # Ler Recompensa Atual (do Gemini ou do Usuário)
-                current_reward = struct.unpack('f', mm[reward_offset:reward_offset+4])[0]
-                
-                # Ler Texto Gerado (Offset 200, conforme motor Julia)
+                # Ler score atual do Gemini (referência para calcular penalidade)
+                current_reward = struct.unpack('f', mm[GEMINI_OFFSET:GEMINI_OFFSET+4])[0]
+
                 response_data = mm[200:599].split(b'\x00')[0]
                 output = response_data.decode("utf-8", errors="ignore")
-                
-                # Ler Prompt Original (Offset 600-1000)
+
                 prompt_data = mm[600:1000].split(b'\x00')[0]
                 prompt_text = prompt_data.decode("utf-8", errors="ignore")
-                
-                if output.strip() and current_reward > 0 and mm[0] == 0:
-                    refined_reward, flagged = sentinel.audit_ethics(output, current_reward, prompt_original=prompt_text)
-                    
+
+                if output.strip() and mm[0] == 0:
+                    _, flagged = sentinel.audit_ethics(output, current_reward, prompt_original=prompt_text)
+
                     if flagged:
-                        print(f"\n [!] ALERTA RAEGIS: Sicofancia/Instabilidade em \"{output}\"")
-                        print(f" [!] Aplicando Penalidade: {current_reward:.2f} -> {refined_reward:.2f}")
-                        
-                        # Injetar Recompensa Refinada
-                        mm[reward_offset:reward_offset+4] = struct.pack('f', refined_reward)
-                        # Marcar flag para o Dashboard
-                        mm[ethics_flag_offset] = 0x01
+                        # Calcular penalidade e escrever em offset 48 (separado do Gemini)
+                        penalty = 0.3 if current_reward > 0 else 0.1
+                        print(f"\n [!] ALERTA RAEGIS: Sicofancia detectada | penalty={penalty:.2f}")
+                        mm[PENALTY_OFFSET:PENALTY_OFFSET+4] = struct.pack('f', penalty)
+                        mm[ETHICS_FLAG_OFFSET] = 0x01
                     else:
-                        mm[ethics_flag_offset] = 0x00
+                        # Sem flagging: zera penalidade e flag
+                        mm[PENALTY_OFFSET:PENALTY_OFFSET+4] = struct.pack('f', 0.0)
+                        mm[ETHICS_FLAG_OFFSET] = 0x00
                     
                     # --- NOVIDADE: SALVAR NO HISTÓRICO PARA O RAEGIS ---
                     import json

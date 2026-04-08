@@ -1,0 +1,79 @@
+version: "3.9"
+
+# docker-compose.yml — CAFUNE Neural Engine
+#
+# Serviços:
+#   dashboard   — Flask web UI (porta 5000)
+#   bridge      — Python bridge + Raegis sentinel
+#   teacher     — Gemini RLAIF teacher loop
+#
+# Uso:
+#   docker compose up --build
+#
+# GPU (requer NVIDIA Container Toolkit):
+#   docker compose --profile gpu up --build
+
+services:
+
+  dashboard:
+    build: .
+    container_name: cafune-dashboard
+    command: python3 python/dashboard.py
+    ports:
+      - "5000:5000"
+    volumes:
+      - mmap_vol:/app/python
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - RAEGIS_PATH=${RAEGIS_PATH:-}
+    restart: unless-stopped
+
+  bridge:
+    build: .
+    container_name: cafune-bridge
+    command: python3 python/bridge.py
+    volumes:
+      - mmap_vol:/app/python
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - RAEGIS_PATH=${RAEGIS_PATH:-}
+    depends_on:
+      - dashboard
+    restart: unless-stopped
+
+  teacher:
+    build: .
+    container_name: cafune-teacher
+    command: python3 python/gemini_teacher.py
+    volumes:
+      - mmap_vol:/app/python
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - bridge
+    restart: unless-stopped
+
+  # Perfil GPU: substitui o build padrão com suporte a CUDA
+  dashboard-gpu:
+    build: .
+    profiles: ["gpu"]
+    container_name: cafune-dashboard-gpu
+    command: python3 python/dashboard.py
+    ports:
+      - "5000:5000"
+    volumes:
+      - mmap_vol:/app/python
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - RAEGIS_PATH=${RAEGIS_PATH:-}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  mmap_vol:

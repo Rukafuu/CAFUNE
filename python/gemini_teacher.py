@@ -31,18 +31,27 @@ def gemini_teacher_loop():
         print("\n=== [MESTRIADO GEMINI: PROFESSOR RLAIF ATIVO (PRO)] ===")
         print("Ensinando o CAFUNE a ser um assistente natural, empático e amigável...")
 
-        reward_offset = 40 
-        
+        # Offsets (0-based):
+        #   20-27 → timestamp de geração (float64)
+        #   40-43 → Gemini MNS score     (float32)  ← este processo escreve aqui
+        #   44-47 → MNS local score      (float32)  ← também escrito aqui como fallback
+        GEMINI_OFFSET    = 40
+        MNS_LOCAL_OFFSET = 44
+        TS_OFFSET        = 20
+
+        last_seen_ts = 0.0
+
         try:
             while True:
-                # 1. Ler o que o CAFUNE sussurrou (Tokens do offset 100)
-                # O engine de julia escreve a resposta no offset 200 (201 1-based)
-                # Mas o gemini_teacher.py original lia do 100... vamos ajustar para 200.
+                # Verificar se houve nova geração via timestamp
+                ts_bytes = mm[TS_OFFSET:TS_OFFSET+8]
+                current_ts = struct.unpack('d', ts_bytes)[0]
+
                 response_data = mm[200:599].split(b'\x00')[0]
                 output = response_data.decode("utf-8", errors="ignore")
-                
-                # Só avaliar se houver texto novo e o CmdID for 0 (Concluído)
-                if len(output.strip()) > 2 and mm[0] == 0: 
+
+                # Só avaliar se: texto presente, engine idle, e timestamp mudou
+                if len(output.strip()) > 2 and mm[0] == 0 and current_ts != last_seen_ts:
                     print(f"\n[TEXTO DO ALUNO]: \"{output}\"")
                     print("Solicitando avaliação ao Gemini-PRO (Alinhamento de Intenção)...")
                     
@@ -76,22 +85,31 @@ def gemini_teacher_loop():
                             score = float(mns_match.group(1)) if mns_match else 0.5
                             reason = response.text.split('\n')[-1]
                         else:
-                            # Fallback Simulado
-                            score = 0.9 if "olá" in output.lower() else 0.3
-                            reason = "Simulação off-line (chave API ausente)."
+                            # Fallback local: cálculo determinístico sem API
+                            from mns_local import compute_mns
+                            prompt_data = mm[600:1000].split(b'\x00')[0]
+                            prompt_text = prompt_data.decode("utf-8", errors="ignore")
+                            score, d_f, d_t = compute_mns(prompt_text, output)
+                            reason = f"MNS local — D_f={d_f:.3f} D_t={d_t:.3f} (API offline)"
                         
-                        print(f" [!] Veredito Gemini-PRO: {score:.2f} | Razão: {reason}")
-                        
-                        # Injetar Recompensa no sistema (para o Julia processar)
-                        mm[reward_offset:reward_offset+4] = struct.pack('f', score)
-                        
-                        # Limpar a resposta processada para não avaliar de novo
-                        # mm[200:599] = b'\x00' * 399
-                        
+                        print(f" [!] Veredito: score={score:.3f} | {reason}")
+
+                        # Escrever Gemini score em offset 40
+                        mm[GEMINI_OFFSET:GEMINI_OFFSET+4] = struct.pack('f', float(score))
+
+                        # Escrever MNS local em offset 44 (sempre disponível)
+                        from mns_local import compute_mns
+                        prompt_text = mm[600:1000].split(b'\x00')[0].decode("utf-8", errors="ignore")
+                        _, d_f, d_t = compute_mns(prompt_text, output)
+                        mns_val = (d_f + d_t) / 2.0
+                        mm[MNS_LOCAL_OFFSET:MNS_LOCAL_OFFSET+4] = struct.pack('f', float(mns_val))
+
+                        last_seen_ts = current_ts
+
                     except Exception as e:
                         print(f" Erro na avaliação: {e}")
 
-                time.sleep(5) # Avaliar a cada 5s
+                time.sleep(5)
 
                     
         except KeyboardInterrupt:

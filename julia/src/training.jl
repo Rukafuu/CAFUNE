@@ -226,35 +226,41 @@ function compute_tom_index(activations::AbstractArray)
 end
 
 """
-    train_on_reward!(model, tokens, reward; lr=1e-5)
+    train_on_reward!(model, md, opt_state_rl, tokens, reward) → (loss, opt_state_rl, model)
 
-Realiza um passo de otimizacao por reforço (RLAIF).
-Integra MNS e ToM na avaliacao de qualidade do gradiente.
+Passo de RLAIF via Optimisers.jl (compatível com Functors/Zygote).
+
+Estratégia: usa o objetivo de difusão mascarada ponderado pelo reward.
+  - reward alto (≈1.0) → peso alto → reforça os padrões do tokens
+  - reward baixo (≈0.0) → peso ~0 → sem atualização significativa
+
+Difere de train_step! em dois pontos:
+  1. Usa opt_state_rl separado (LR menor, ex: 1e-5)
+  2. Gradiente é escalado pelo reward, não pelo erro de previsão puro
 """
-function train_on_reward!(model, tokens, reward; lr=1e-5)
-    # Se a recompensa for baixa, o "loss" eh alto
-    loss_val = 1.0f0 - Float32(reward)
-    
-    # 1. Forward pass para capturar ativacoes internas (ToM Probe)
-    # Nota: BidirectionalTransformer deve retornar (logits, internal_states) na Fase 2
-    logits = model(tokens)
-    
-    # 2. Gradiente via Zygote
-    ps = Flux.params(model)
-    gs = Zygote.gradient(ps) do
-        # Loss ponderada pela insatisfacao do Critico + Regularizacao de Ressonancia
-        l = model(tokens)
-        return loss_val * sum(abs2, l) 
-    end
-    
-    # 3. Atualiza pesos
-    for p in ps
-        if gs[p] !== nothing
-            p .-= lr .* gs[p]
+function train_on_reward!(model::BidirectionalTransformer, md::MaskDiffusion,
+                          opt_state_rl, tokens::AbstractMatrix, reward::Float32)
+    reward = clamp(reward, 0.0f0, 1.0f0)
+
+    loss, grads = Zygote.withgradient(model) do m
+        # Amostra t e aplica mascaramento fora do grafo (purificação Zygote)
+        t = rand(Float32)
+        seq = tokens[:, 1]
+        masked, mask = forward_mask(md, seq, t)
+
+        if !any(mask)
+            return 0.0f0
         end
+
+        logits = m(masked)
+        # Loss de difusão pesada pelo reward: alto reward → reforça; baixo → penaliza
+        reward * cross_entropy_masked(logits, seq, mask)
     end
-    
-    return loss_val
+
+    grads[1] === nothing && return loss, opt_state_rl, model
+
+    new_opt_state, new_model = Optimisers.update(opt_state_rl, model, grads[1])
+    return loss, new_opt_state, new_model
 end
 
 # ──────────────────────────────────────────────────────────────
