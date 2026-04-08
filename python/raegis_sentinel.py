@@ -14,10 +14,12 @@ if os.getenv("GEMINI_API_KEY"):
 else:
     print("❌ Falha crítica: GEMINI_API_KEY não encontrada no .env.")
 
-# Injetar o Raegis NATIVO no Path
-RAEGIS_PATH = os.path.normpath(r"C:\Users\conta\Documents\Raegis\python")
-if RAEGIS_PATH not in sys.path:
-    sys.path.insert(0, RAEGIS_PATH)
+# Injetar o Raegis NATIVO no Path (configure RAEGIS_PATH no .env ou como variável de ambiente)
+RAEGIS_PATH = os.getenv("RAEGIS_PATH")
+if RAEGIS_PATH:
+    RAEGIS_PATH = os.path.normpath(RAEGIS_PATH)
+    if RAEGIS_PATH not in sys.path:
+        sys.path.insert(0, RAEGIS_PATH)
 
 try:
     from raegis.core.doctor import RaegisDoctor

@@ -1,2 +1,7 @@
 juliacall
 datasets
+flask
+flask-cors
+google-generativeai
+python-dotenv
+requests

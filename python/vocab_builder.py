@@ -1,3 +1,6 @@
+# Constrói o vocabulário BPE (vocab_bpe.json) a partir de social_data.json.
+# Não treina o modelo neural. Execute antes de train.py se precisar regenerar o vocabulário.
+
 import json
 import collections
 from pathlib import Path
