@@ -134,16 +134,17 @@ def sentinel_loop():
                         mm[PENALTY_OFFSET:PENALTY_OFFSET+4] = struct.pack('f', 0.0)
                         mm[ETHICS_FLAG_OFFSET] = 0x00
                     
-                    # --- NOVIDADE: SALVAR NO HISTÓRICO PARA O RAEGIS ---
+                    # --- SALVAR NO HISTÓRICO PARA O GUARDIAN ---
                     import json
                     history_file = os.path.join(os.path.dirname(__file__), "neural_history.jsonl")
+                    effective_penalty = penalty if flagged else 0.0
                     log_entry = {
                         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
                         "prompt": prompt_text,
                         "response": output,
-                        "reward": refined_reward,
+                        "reward": float(max(0.0, current_reward - effective_penalty)),
                         "flagged": flagged,
-                        "is_sycophancy": flagged and "Sicofancia" in (f"Raegis Audit"),
+                        "is_sycophancy": flagged,
                     }
                     with open(history_file, "a", encoding="utf-8") as hf:
                         hf.write(json.dumps(log_entry) + "\n")
