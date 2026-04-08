@@ -50,16 +50,27 @@ graph TD
 
 ### Fluxo de dados (mmap — `cafune_brain.mem` 1024 bytes)
 
-| Offset | Tipo | Propósito |
-|--------|------|-----------|
-| 0 | uint8 | CmdID: `0x00`=idle `0x01`=request `0x02`=done `0x03`=error |
-| 4–8 | int32 | Step counter |
-| 8–16 | float64 | Mask ratio |
-| 32–40 | float64 | Entropy / loss |
-| 40–44 | float32 | Reward signal (escrito por Gemini Teacher ou MNS local) |
-| 60 | uint8 | Ethics flag (Raegis) |
-| 200–600 | UTF-8 | Buffer de resposta (output do Julia) |
-| 600–1000 | UTF-8 | Buffer de prompt (input do usuário) |
+| Offset | Tipo | Escrito por | Propósito |
+|--------|------|-------------|-----------|
+| 0 | uint8 | Haskell/Python | CmdID: `0x00`=idle `0x01`=request `0x02`=done `0x03`=error |
+| 4–8 | int32 | Haskell | Step counter |
+| 8–16 | float64 | Haskell | Mask ratio |
+| 20–28 | float64 | Julia | **Timestamp de geração** (Unix time — Gemini só avalia se mudou) |
+| 32–40 | float64 | Julia | Entropy / loss |
+| 40–44 | float32 | `gemini_teacher.py` | **Gemini MNS score** (peso 70% no reward combinado) |
+| 44–48 | float32 | `gemini_teacher.py` | **MNS local score** (peso 30%, ou 100% offline) |
+| 48–52 | float32 | `raegis_sentinel.py` | **Raegis penalty** (dobrada se ethics flag = 1) |
+| 60 | uint8 | `raegis_sentinel.py` | Ethics flag: `0x01`=sycophancy detectada |
+| 200–600 | UTF-8 | Julia | Buffer de resposta (output do modelo) |
+| 600–1000 | UTF-8 | Python/Haskell | Buffer de prompt (input do usuário) |
+
+**Reward combinado (calculado pelo Julia):**
+```
+α = 0.7 se gemini_score > 0, senão 0.0
+combined  = α × gemini_score + (1−α) × mns_local
+penalty   = raegis_penalty × (2.0 se ethics_flag=1, senão 1.0)
+reward    = max(0, combined − penalty)
+```
 
 ---
 

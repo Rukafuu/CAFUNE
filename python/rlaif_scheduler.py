@@ -4,9 +4,11 @@ import os
 import json
 import random
 import struct
+from filelock import FileLock, Timeout
 
 # Caminhos ajustados para o CWD do script (python/)
-MEM_FILE = os.path.normpath(os.path.join(os.path.dirname(__file__), "cafune_brain.mem"))
+MEM_FILE     = os.path.normpath(os.path.join(os.path.dirname(__file__), "cafune_brain.mem"))
+LOCK_FILE    = MEM_FILE + ".lock"
 DATASET_FILE = os.path.normpath(os.path.join(os.path.dirname(__file__), "bercario_data.jsonl"))
 
 def load_dataset():
@@ -34,34 +36,32 @@ def run_scheduler():
     
     with open(mem_file, "r+b") as f:
         mm = mmap.mmap(f.fileno(), 1024)
-        
+
         try:
             while True:
-                # 1. Esperar o Engine estar livre (CmdID == 0)
                 cmd_id = mm[0]
                 if cmd_id == 0:
-                    entry = random.choice(dataset)
+                    entry  = random.choice(dataset)
                     prompt = entry["prompt"]
                     intent = entry["intent"]
-                    
+
                     print(f"\n[RLAIF PULSE] Enviando prompt: \"{prompt}\" (Intenção: {intent})")
-                    
-                    # 2. Escrever o prompt na memória (Offset 600 em 0-based index)
-                    prompt_bytes = prompt.encode("utf-8")[:399]
-                    mm[600:600+len(prompt_bytes)] = prompt_bytes
-                    mm[600+len(prompt_bytes):1000] = b'\x00' * (400 - len(prompt_bytes))
-                    
-                    # 3. Disparar o pulso (CmdID = 1)
-                    mm[0] = 0x01
-                    print("[✓] Pulso enviado. O Engine deve começar a processar...")
-                    
-                    # Esperar o ciclo de 6 minutos
-                    time.sleep(360) 
+
+                    try:
+                        with FileLock(LOCK_FILE, timeout=10):
+                            prompt_bytes = prompt.encode("utf-8")[:399]
+                            mm[600:600+len(prompt_bytes)] = prompt_bytes
+                            mm[600+len(prompt_bytes):1000] = b'\x00' * (400 - len(prompt_bytes))
+                            mm[0] = 0x01
+                        print("[✓] Pulso enviado com lock.")
+                    except Timeout:
+                        print("[!] Lock ocupado — pulso adiado para o próximo ciclo.")
+
+                    time.sleep(360)
                 else:
-                    # Engine ocupado (CmdID 1 ou 2), aguarde o próximo ciclo
-                    print(f" [.] Engine ocupado ou não-zero (CmdID: {cmd_id}), aguardando...")
+                    print(f" [.] Engine ocupado (CmdID: {cmd_id}), aguardando...")
                     time.sleep(5)
-                    
+
         except KeyboardInterrupt:
             print("\nScheduler encerrado.")
         finally:

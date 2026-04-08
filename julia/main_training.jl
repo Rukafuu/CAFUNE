@@ -193,6 +193,13 @@ function start_training_session()
     end
 
     # ── 4. Barramento mmap ──────────────────────────────────────
+    # Layout de offsets (0-based Python = 1-based Julia + 1):
+    #   0      CmdID (uint8)
+    #   20-27  Timestamp de geração (float64, Unix time)
+    #   40-43  Gemini MNS score (float32)
+    #   44-47  MNS local score  (float32)
+    #   48-51  Raegis penalty   (float32)
+    #   60     Ethics flag      (uint8)
     @info "4. Conectando barramento mmap..."
     mm = nothing; s = nothing
     if isfile(MEM_FILE)
@@ -203,46 +210,79 @@ function start_training_session()
         @warn "   cafune_brain.mem não encontrado — RLAIF desativado."
     end
 
-    # ── 5. Loop de treino com checkpointing ────────────────────
-    epochs_remaining = EPOCHS
+    # Optimizer separado para RLAIF (LR menor para não sobrescrever treino supervisionado)
+    RLAIF_LR     = 1e-5
+    opt_rl       = Optimisers.Adam(Float32(RLAIF_LR))
+    opt_state_rl = Optimisers.setup(opt_rl, model)
+
+    # ── 5. Loop de treino com checkpointing e RLAIF ────────────
     best_loss = Inf32
     @info "5. Iniciando treino | epochs $(start_epoch+1)→$(start_epoch+EPOCHS)"
 
     for epoch in 1:EPOCHS
         actual_epoch = start_epoch + epoch
         println()
-        @info "── Epoch $actual_epoch/$( start_epoch + EPOCHS) ──────────────────────"
+        @info "── Epoch $actual_epoch/$(start_epoch + EPOCHS) ──────────────────────"
         flush(stdout)
 
-        # Um epoch de treino (train! retorna o modelo atualizado)
+        # ── Treino supervisionado ──
         model = train!(model, md, dataset;
                        epochs        = 1,
                        max_lr        = MAX_LR,
                        warmup_ratio  = WARMUP_RATIO)
 
-        # Estimar loss em amostra (máx 20 sequências para ser rápido)
+        # ── Estimar loss ──
         sample_n     = min(20, length(dataset))
         sample_idx   = randperm(length(dataset))[1:sample_n]
         epoch_losses = Float32[compute_loss(model, md, dataset[i]) for i in sample_idx]
         avg_loss     = mean(epoch_losses)
-
         @printf("   Loss estimada (n=%d): %.4f\n", sample_n, avg_loss)
 
-        # Checkpoint por epoch
-        save_checkpoint(model, actual_epoch, Float32(avg_loss), config, vocab_size)
+        # ── Escrita do timestamp de geração no mmap ──
+        if mm !== nothing
+            ts_bytes = reinterpret(UInt8, [Float64(Dates.datetime2unix(now()))])
+            mm[21:28] .= ts_bytes   # offset 20 (0-based) = índice 21 (1-based)
+        end
 
-        # Melhor checkpoint
+        # ── Leitura e combinação dos sinais RLAIF ──
+        if mm !== nothing
+            gemini_score   = reinterpret(Float32, mm[41:44])[1]   # offset 40
+            mns_local      = reinterpret(Float32, mm[45:48])[1]   # offset 44
+            raegis_penalty = reinterpret(Float32, mm[49:52])[1]   # offset 48
+            ethics_flag    = mm[61]                                # offset 60
+
+            # Validar ranges (protege contra lixo na memória)
+            gemini_score   = isnan(gemini_score)   ? 0.0f0 : clamp(gemini_score,   0.0f0, 1.0f0)
+            mns_local      = isnan(mns_local)      ? 0.0f0 : clamp(mns_local,      0.0f0, 1.0f0)
+            raegis_penalty = isnan(raegis_penalty) ? 0.0f0 : clamp(raegis_penalty, 0.0f0, 1.0f0)
+
+            # Combina scores: Gemini tem peso 70% se disponível, senão usa só MNS local
+            α = gemini_score > 0.0f0 ? 0.7f0 : 0.0f0
+            combined = α * gemini_score + (1.0f0 - α) * mns_local
+
+            # Ethics flag dobra a penalidade (sicofância detectada)
+            effective_penalty = ethics_flag == 0x01 ? raegis_penalty * 2.0f0 : raegis_penalty
+            combined_reward   = max(0.0f0, combined - effective_penalty)
+
+            if combined_reward > 0.0f0
+                @info "   [RLAIF] Gemini=$(round(gemini_score,digits=3)) MNS=$(round(mns_local,digits=3)) Penalty=$(round(effective_penalty,digits=3)) → Reward=$(round(combined_reward,digits=3))"
+
+                # Aplica passo de reforço em amostra aleatória do dataset
+                rl_idx  = rand(1:length(dataset))
+                rl_loss, opt_state_rl, model = train_on_reward!(
+                    model, md, opt_state_rl, dataset[rl_idx], combined_reward
+                )
+                @printf("   [RLAIF] Loss RLAIF: %.4f\n", rl_loss)
+            else
+                @info "   [RLAIF] Reward combinado zerado ou nulo — sem atualização RLAIF neste epoch."
+            end
+        end
+
+        # ── Checkpoints ──
+        save_checkpoint(model, actual_epoch, Float32(avg_loss), config, vocab_size)
         if avg_loss < best_loss
             best_loss = avg_loss
             save_best(model, actual_epoch, Float32(avg_loss), config, vocab_size)
-        end
-
-        # Leitura do sinal RLAIF (Bloco 2 vai usar isso de verdade)
-        if mm !== nothing
-            reward = reinterpret(Float32, mm[41:44])[1]
-            if 0.0f0 < reward <= 1.0f0
-                @info "   [RLAIF] Sinal do mentor: $(round(reward, digits=3)) (Bloco 2: aplicação ao gradiente)"
-            end
         end
     end
 
