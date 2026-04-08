@@ -12,10 +12,18 @@ Fluxo completo:
 
 import sys
 import os
+import logging
 from pathlib import Path
 
 # Adicionar python/ ao path
 sys.path.insert(0, str(Path(__file__).parent))
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 from tokenizer import BPETokenizer, MASK_TOKEN_ID
 
@@ -61,9 +69,7 @@ def evaluate(bridge, tok):
     print(f"   🤖 Resposta do CAFUNE: '{decoded}'")
 
 def main():
-    print("CAFUNE (Composite Architecture for Fast Universal Noise-reduction Engine)")
-    print("   Treino Fase 7 -- Tokenização BPE & Escala")
-    print("="*50)
+    logger.info("CAFUNE — Treino Fase 7 (Tokenização BPE & Escala)")
 
     # ── Configuração ──
     SEQ_LEN = 128
@@ -71,23 +77,23 @@ def main():
     N_HEADS = 8
     N_LAYERS = 6
     D_FF = 1024
-    
     EPOCHS = 20
     MAX_LR = 4e-4
     WARMUP_RATIO = 0.15
 
-    # ── Tokenizador BPE ──
-    print(f"\n[1/4] Forjando Tokenizer BPE (Sub-palavras)...")
+    # ── Tokenizador ──
+    logger.info("[1/4] Construindo tokenizador (character-level)...")
     tok = BPETokenizer(vocab_size=512)
     tok.build_vocab(EXTENDED_CORPUS)
     tok.save("vocab.json")
 
     # ── Dataset ──
-    print(f"\n[2/4] Preparando dataset neuro-codificado...")
+    logger.info("[2/4] Preparando dataset...")
     dataset = prepare_dataset(EXTENDED_CORPUS, SEQ_LEN, tok)
+    logger.info("Dataset: %d sequências de comprimento %d", len(dataset), SEQ_LEN)
 
     # ── Bridge Julia ──
-    print(f"\n[3/4] Inicializando motor Julia (Zygote/Pure-AD)...")
+    logger.info("[3/4] Inicializando motor Julia (Zygote/Pure-AD)...")
     try:
         from bridge import CAFUNEBridge
         bridge = CAFUNEBridge()
@@ -101,22 +107,21 @@ def main():
             num_diff_steps=20,
         )
     except ImportError as e:
-        print(f"\n⚠️  Bridge Julia não disponível: {e}")
+        logger.error("Bridge Julia não disponível: %s", e)
         return
 
     # ── Treino ──
-    print(f"\n[4/4] Treinando com BPE Ativado...")
+    logger.info("[4/4] Treinando — epochs=%d lr=%.0e", EPOCHS, MAX_LR)
     bridge.train_on_batch(
-        dataset, 
-        epochs=EPOCHS, 
-        max_lr=MAX_LR, 
+        dataset,
+        epochs=EPOCHS,
+        max_lr=MAX_LR,
         warmup_ratio=WARMUP_RATIO
     )
 
     # ── Avaliação ──
     evaluate(bridge, tok)
-
-    print("\n🚀 TREINO FASE 7 CONCLUÍDO!")
+    logger.info("Treino Fase 7 concluído.")
 
 
 if __name__ == "__main__":
