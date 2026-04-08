@@ -22,28 +22,29 @@ O diagrama abaixo ilustra o fluxo completo de dados entre as camadas do ecossist
 
 ```mermaid
 graph TD
-    subgraph "Cérebro (Haskell)"
-        A[Orquestrador Adaptativo] -->|Schedule + Entropy| B(RLAIF Loop)
+    subgraph Cerebro_Haskell["Cérebro (Haskell)"]
+        A[Orquestrador Adaptativo] -->|Schedule + Entropy| B[RLAIF Loop]
     end
 
-    subgraph "Sentinela (Python)"
+    subgraph Sentinela_Python["Sentinela (Python)"]
         B -->|filelock + mmap write| C[Bridge cafune_brain.mem]
-        C -->|reward float32 @ offset 40| D{Gemini Teacher / MNS Local}
+        C -->|reward @ offset 40-52| D[Gemini Teacher / MNS Local]
         D -->|audit + penalty| E[Raegis Sentinel]
+        E -->|anomaly score| G2[Guardian Reward]
     end
 
-    subgraph "Motor (Julia)"
+    subgraph Motor_Julia["Motor (Julia)"]
         C -->|zero-copy mmap read| F[Transformer Bidirecional]
         F -->|Zygote Autodiff| G[Online Fine-Tuning]
     end
 
-    subgraph "Ossos (C/CUDA)"
+    subgraph Ossos_CUDA["Ossos (C/CUDA)"]
         G -->|ccall DLL| H[Flash Attention v2]
-        H -->|VRAM tiled| I((GPU))
+        H -->|VRAM tiled| I[GPU]
     end
 
-    subgraph "Observabilidade"
-        C -->|metrics| J[Dashboard Flask :5000]
+    subgraph Observabilidade["Observabilidade"]
+        C -->|metrics| J["Dashboard Flask :5000"]
         D -->|neural_history.jsonl| J
     end
 ```
