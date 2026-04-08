@@ -2,7 +2,7 @@
   <img src="assets/logo.png" width="400" alt="CAFUNE Logo">
 </p>
 
-# 🧟 CAFUNE: Neural Engine de Difusão Adaptativa (45.1M)
+# CAFUNE: Neural Engine de Difusão Adaptativa (45.1M)
 
 <p align="center">
   <img src="https://img.shields.io/badge/Haskell-5e5086?style=for-the-badge&logo=haskell&logoColor=white" alt="Haskell">
