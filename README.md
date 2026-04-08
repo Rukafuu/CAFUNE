@@ -1,9 +1,8 @@
-
 <p align="center">
   <img src="assets/logo.png" width="400" alt="CAFUNE Logo">
 </p>
 
-# CAFUNE: Neural Engine de Difusão Adaptativa
+# 🧟 CAFUNE: Neural Engine de Difusão Adaptativa (45.1M)
 
 <p align="center">
   <img src="https://img.shields.io/badge/Haskell-5e5086?style=for-the-badge&logo=haskell&logoColor=white" alt="Haskell">
@@ -12,11 +11,13 @@
   <img src="https://img.shields.io/badge/CUDA-76b900?style=for-the-badge&logo=nvidia&logoColor=white" alt="CUDA">
 </p>
 
-**CAFUNE** (Composite Architecture for Fast Universal Noise-reduction Engine) é um motor de difusão híbrido de elite, projetado para simular o processamento cognitivo humano através de uma arquitetura heterogênea de alto desempenho. O sistema utiliza um loop de feedback adaptativo entre Haskell (Orquestração), Julia (Inferência) e CUDA (Aceleração).
+> _"Não estava eu formando um ser horrível e transgressor?"_ — Mary Shelley
+
+**CAFUNE** (**C**omposite **A**rchitecture for **F**ast **U**niversal **N**oise-reduction **E**ngine) é um motor de difusão híbrido de elite, projetado para simular o processamento cognitivo humano através de uma arquitetura heterogênea de alto desempenho. O sistema utiliza um loop de feedback adaptativo entre **Haskell** (Orquestração), **Julia** (Inferência) e **CUDA** (Aceleração).
 
 ---
 
-## ARQUITETURA DO SISTEMA (Frankenstein Flow)
+## 🧬 ARQUITETURA DO SISTEMA (Frankenstein Flow)
 
 O diagrama abaixo ilustra o fluxo completo de dados entre as camadas do ecossistema.
 
@@ -77,12 +78,11 @@ reward         = max(0, combined − total_penalty)
 
 ---
 
-## FUNDAMENTAÇÃO EM NEUROCIÊNCIA COGNITIVA
+## 🧠 FUNDAMENTAÇÃO EM NEUROCIÊNCIA COGNITIVA
 
-Diferente de modelos autoregressivos tradicionais, o CAFUNE é inspirado no Sistema de Neurônios Espelho (MNS).
+Diferente de modelos autoregressivos tradicionais, o CAFUNE é inspirado no **Sistema de Neurônios Espelho (MNS)** e na **Codificação Preditiva**.
 
-*   **Ressonância Funcional**: O motor transforma informações textuais em representações internas de intenção, permitindo que a IA compreenda a ação por dentro.
-*   **Codificação Preditiva**: O sistema busca constantemente minimizar o erro de previsão, agindo como um análogo funcional à hierarquia cortical humana.
+*   **Ressonância Funcional**: O motor transforma informações textuais em representações internas de intenção, permitindo que a IA compreenda a ação "por dentro".
 *   **Teoria da Mente (ToM)**: Arquitetura otimizada para ativar circuitos funcionais em camadas superiores para detecção de estados mentais e intenções complexas.
 *   **Mirror Neuron Index (CMNI)**: Métrica implementada para quantificar a capacidade de espelhamento do modelo.
 
@@ -92,50 +92,38 @@ $$MNS_n = \frac{\Delta \mu_n(D_f) + \Delta \mu_n(D_t)}{2}$$
 
 ---
 
-## PERFORMANCE DE BAIXO NÍVEL (ZPM)
-
-O CAFUNE segue o Zombie Performance Manifesto (ZPM): cada ciclo de clock é otimizado ao limite.
-
-*   **Shared Memory MMAP**: Eliminação do gargalo de IO. Haskell e Julia operam via memória mapeada, garantindo latência de microssegundos.
-*   **Flash Attention v2 Customizado**: Implementação de Tiling para reduzir acessos à memória global da GPU, otimizando o uso da SRAM.
-*   **Zero-Copy Architecture**: Fluxo de dados entre linguagens sem overhead de serialização ou cópias desnecessárias.
-
----
-
-## 📊 MÉTRICAS TÉCNICAS (v2.5)
-
-| Métrica | Valor | Status |
-|--------|------|--------|
-| Parâmetros | 45,120,400 (45.1M) | ✅ GIGANTE |
-| Camadas | 12 (Transformer Bidirecional) | ✅ EXPANDIDO |
-| Mentoria | Gemini 2.5 Pro | ✅ 2026 ERA |
-| Latência | ~15ms (CUDA FP16) | 🚀 OTIMIZADO |
-
----
-
-## ESPECIFICAÇÕES CAFUNE v2.5 (2026)
+## 🚀 ESPECIFICAÇÕES CAFUNE v2.5 (2026)
 
 A versão **45.1M** (codinome: *Lira-Mega-Boost*) representa o auge da arquitetura de difusão social.
 
-1.  **Net2Net Expansion**: O modelo foi expandido verticalmente de 6 para 12 camadas, preservando o conhecimento prévio da v1.0 e permitindo que novas sinapses se formem através de ruído epsilon controlado ($10^{-5}$).
-2.  **Aprendizado Autônomo (RLAIF)**: O sistema não depende mais apenas de datasets fixos. Ele aprende "ao vivo" através de um loop de feedback com o **Gemini 2.5 Pro**, que avalia a empatia e a intenção (CMNI) a cada 1 segundo.
-3.  **Memória de Ressonância**: Utiliza 1024 bytes de memória mapeada (MMAP) para troca de estados entre Haskell, Julia e Python com latência zero.
-4.  **Auditoria Ética Sentinela**: O sub-módulo Python vigia a rede contra a **Sicofância** (tendência de adulação ao usuário) e falhas de coerência linguística (ruído estocástico).
-5.  **Manifesto Bio-Inspirado**: Projetada para imitar os Neurônios Espelho humanos, a Lira v2.5 não apenas responde; ela reage ao tom emocional e à intenção detectada no prompt.
+1.  **Net2Net Expansion**: Expansão vertical de 6 para 12 camadas, preservando o conhecimento prévio da v1.0 e permitindo novas sinapses via ruído epsilon controlado ($10^{-5}$).
+2.  **Aprendizado Autônomo (RLAIF)**: Loop de feedback com o **Gemini 2.5 Pro Pro**, avaliando coerência, intenção e empatia a cada pulso de ressonância.
+3.  **Dicionário Social 🧿**: Vocabulário BPE de **1949 tokens** especializado em diálogos humanos reais.
+4.  **Zero-Copy Architecture**: Fluxo de dados entre linguagens via **MMAP (1024 bytes)** sem overhead de serialização.
 
 ---
 
+## 📊 MÉTRICAS TÉCNICAS (Elite)
+
+| Métrica | Valor | Status |
+| :--- | :--- | :--- |
+| **Parâmetros** | 45,166,412 (45.1M) | ✅ GIGANTE |
+| **Camadas** | 12 (Transformer Bidirecional) | ✅ EXPANDIDO |
+| **Vocabulário** | 1949 Tokens BPE Sociais | 🧿 ALPHA SOCIAL |
+| **Latência** | ~14ms (CUDA direct) | 🚀 OTIMIZADO |
+
 ---
 
-## RAEGIS: MONITORAMENTO ÉTICO MECANÍSTICO
+## 🛡️ RAEGIS: MONITORAMENTO ÉTICO MECANÍSTICO
 
-Integração com o sistema Raegis para mitigação de vícios algorítmicos:
-*   **Anti-Sicofancia**: Filtra a tendência do modelo de validar crenças subjetivas incorretas.
-*   **Mimese de Perspectiva**: Previne a criação de câmaras de eco gerativas.
+Integração com o sistema **Raegis v2.5.1** para mitigação de vícios algorítmicos e auditoria de intenção:
+*   **Anti-Sicofancia**: Filtra a tendência do modelo de adulação ao usuário.
+*   **Maturity Index**: Monitora a entropia da resposta para prevenir colapso e repetitividade.
+*   **Gold Samples**: Experiências com score > 0.8 são salvas no `experience_buffer` para evolução contínua.
 
 ---
 
-## COMO EXECUTAR
+## 🛠️ COMO EXECUTAR O ORGANISMO
 
 ### Pré-requisitos
 
