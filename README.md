@@ -23,49 +23,29 @@ O diagrama abaixo ilustra o fluxo completo de dados entre as camadas do ecossist
 
 ```mermaid
 graph TD
-    subgraph "Cérebro (Haskell)"
-        A[Orquestrador Adaptativo] -->|Schedule + Entropy| B(RLAIF Loop)
+    subgraph Cerebro_Haskell["Cérebro (Haskell)"]
+        A[Orquestrador Adaptativo] -->|Schedule + Entropy| B[RLAIF Loop]
     end
 
-    subgraph "Sentinela (Python)"
+    subgraph Sentinela_Python["Sentinela (Python)"]
         B -->|filelock + mmap write| C[Bridge cafune_brain.mem]
-        C -->|reward float32 @ offset 40| D{Gemini Teacher / MNS Local}
+        C -->|reward @ offset 40-52| D[Gemini Teacher / MNS Local]
         D -->|audit + penalty| E[Raegis Sentinel]
+        E -->|anomaly score| G2[Guardian Reward]
     end
 
-    subgraph "Motor (Julia)"
+    subgraph Motor_Julia["Motor (Julia)"]
         C -->|zero-copy mmap read| F[Transformer Bidirecional]
         F -->|Zygote Autodiff| G[Online Fine-Tuning]
     end
 
-    subgraph "Ossos (C/CUDA)"
+    subgraph Ossos_CUDA["Ossos (C/CUDA)"]
         G -->|ccall DLL| H[Flash Attention v2]
-        H -->|VRAM tiled| I((GPU))
-O diagrama abaixo ilustra a comunicação de latência zero entre as camadas do ecossistema via **Shared Memory MMAP**.
-
-```mermaid
-graph TD
-    subgraph "Nervos (Haskell)"
-        A[Orquestrador Adaptativo] -->|Sched/Entropy| B(RLAIF Loop)
-    end
-    
-    subgraph "Pele (Python)"
-        B -->|IPC Shared Memory| C[Bridge MMAP]
-        C -->|Sinal de Recompensa| D{AI Critic / Raegis}
-    end
-    
-    subgraph "Músculos (Julia)"
-        C -->|Zero-Copy| E[Transformer Bidirecional]
-        E -->|Autodiff Zygote| F[Online Fine-Tuning]
-    end
-    
-    subgraph "Esqueleto (C/CUDA)"
-        F -->|Fused Kernel| G[Flash Attention v2]
-        G -->|VRAM| H((GPU Speed))
+        H -->|VRAM tiled| I[GPU]
     end
 
-    subgraph "Observabilidade"
-        C -->|metrics| J[Dashboard Flask :5000]
+    subgraph Observabilidade["Observabilidade"]
+        C -->|metrics| J["Dashboard Flask :5000"]
         D -->|neural_history.jsonl| J
     end
 ```
@@ -143,15 +123,9 @@ Integração com o sistema **Raegis v2.5.1** para mitigação de vícios algorí
 
 ---
 
-## COMO EXECUTAR
-
-### Pré-requisitos
 ## 🛠️ COMO EXECUTAR O ORGANISMO
 
-1.  **Gere a Visão**: `python python/train_bpe.py`
-2.  **Dashboard**: `python python/dashboard.py` (Visualização Web)
-3.  **Treinamento/Inca**: `julia --project=. main_training.jl` dentro de `julia/`.
-4.  **Haskell**: `./gradlew run` dentro de `haskell/` (Orquestrador).
+### Pré-requisitos
 
 ```bash
 # 1. Configure as variáveis de ambiente
