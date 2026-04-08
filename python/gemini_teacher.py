@@ -76,9 +76,12 @@ def gemini_teacher_loop():
                             score = float(mns_match.group(1)) if mns_match else 0.5
                             reason = response.text.split('\n')[-1]
                         else:
-                            # Fallback Simulado
-                            score = 0.9 if "olá" in output.lower() else 0.3
-                            reason = "Simulação off-line (chave API ausente)."
+                            # Fallback local: cálculo determinístico sem API
+                            from mns_local import compute_mns
+                            prompt_data = mm[600:1000].split(b'\x00')[0]
+                            prompt_text = prompt_data.decode("utf-8", errors="ignore")
+                            score, d_f, d_t = compute_mns(prompt_text, output)
+                            reason = f"MNS local — D_f={d_f:.3f} D_t={d_t:.3f} (API offline)"
                         
                         print(f" [!] Veredito Gemini-PRO: {score:.2f} | Razão: {reason}")
                         
