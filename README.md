@@ -60,16 +60,18 @@ graph TD
 | 40–44 | float32 | `gemini_teacher.py` | **Gemini MNS score** (peso 70% no reward combinado) |
 | 44–48 | float32 | `gemini_teacher.py` | **MNS local score** (peso 30%, ou 100% offline) |
 | 48–52 | float32 | `raegis_sentinel.py` | **Raegis penalty** (dobrada se ethics flag = 1) |
+| 52–56 | float32 | `guardian_reward.py` | **Guardian penalty** ∈ [0, 0.5] — anomalia comportamental |
 | 60 | uint8 | `raegis_sentinel.py` | Ethics flag: `0x01`=sycophancy detectada |
 | 200–600 | UTF-8 | Julia | Buffer de resposta (output do modelo) |
 | 600–1000 | UTF-8 | Python/Haskell | Buffer de prompt (input do usuário) |
 
 **Reward combinado (calculado pelo Julia):**
 ```
-α = 0.7 se gemini_score > 0, senão 0.0
-combined  = α × gemini_score + (1−α) × mns_local
-penalty   = raegis_penalty × (2.0 se ethics_flag=1, senão 1.0)
-reward    = max(0, combined − penalty)
+α              = 0.7 se gemini_score > 0, senão 0.0
+combined       = α × gemini_score + (1−α) × mns_local
+raegis_eff     = raegis_penalty × (2.0 se ethics_flag=1, senão 1.0)
+total_penalty  = raegis_eff + guardian_penalty   # guardian ∈ [0, 0.5]
+reward         = max(0, combined − total_penalty)
 ```
 
 ---

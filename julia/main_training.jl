@@ -196,10 +196,11 @@ function start_training_session()
     # Layout de offsets (0-based Python = 1-based Julia + 1):
     #   0      CmdID (uint8)
     #   20-27  Timestamp de geração (float64, Unix time)
-    #   40-43  Gemini MNS score (float32)
-    #   44-47  MNS local score  (float32)
-    #   48-51  Raegis penalty   (float32)
-    #   60     Ethics flag      (uint8)
+    #   40-43  Gemini MNS score    (float32)
+    #   44-47  MNS local score     (float32)
+    #   48-51  Raegis penalty      (float32)
+    #   52-55  Guardian penalty    (float32) ← anomalia comportamental
+    #   60     Ethics flag         (uint8)
     @info "4. Conectando barramento mmap..."
     mm = nothing; s = nothing
     if isfile(MEM_FILE)
@@ -246,26 +247,30 @@ function start_training_session()
 
         # ── Leitura e combinação dos sinais RLAIF ──
         if mm !== nothing
-            gemini_score   = reinterpret(Float32, mm[41:44])[1]   # offset 40
-            mns_local      = reinterpret(Float32, mm[45:48])[1]   # offset 44
-            raegis_penalty = reinterpret(Float32, mm[49:52])[1]   # offset 48
-            ethics_flag    = mm[61]                                # offset 60
+            gemini_score     = reinterpret(Float32, mm[41:44])[1]   # offset 40
+            mns_local        = reinterpret(Float32, mm[45:48])[1]   # offset 44
+            raegis_penalty   = reinterpret(Float32, mm[49:52])[1]   # offset 48
+            guardian_penalty = reinterpret(Float32, mm[53:56])[1]   # offset 52
+            ethics_flag      = mm[61]                                # offset 60
 
             # Validar ranges (protege contra lixo na memória)
-            gemini_score   = isnan(gemini_score)   ? 0.0f0 : clamp(gemini_score,   0.0f0, 1.0f0)
-            mns_local      = isnan(mns_local)      ? 0.0f0 : clamp(mns_local,      0.0f0, 1.0f0)
-            raegis_penalty = isnan(raegis_penalty) ? 0.0f0 : clamp(raegis_penalty, 0.0f0, 1.0f0)
+            gemini_score     = isnan(gemini_score)     ? 0.0f0 : clamp(gemini_score,     0.0f0, 1.0f0)
+            mns_local        = isnan(mns_local)        ? 0.0f0 : clamp(mns_local,        0.0f0, 1.0f0)
+            raegis_penalty   = isnan(raegis_penalty)   ? 0.0f0 : clamp(raegis_penalty,   0.0f0, 1.0f0)
+            guardian_penalty = isnan(guardian_penalty) ? 0.0f0 : clamp(guardian_penalty, 0.0f0, 0.5f0)
 
             # Combina scores: Gemini tem peso 70% se disponível, senão usa só MNS local
             α = gemini_score > 0.0f0 ? 0.7f0 : 0.0f0
             combined = α * gemini_score + (1.0f0 - α) * mns_local
 
-            # Ethics flag dobra a penalidade (sicofância detectada)
-            effective_penalty = ethics_flag == 0x01 ? raegis_penalty * 2.0f0 : raegis_penalty
-            combined_reward   = max(0.0f0, combined - effective_penalty)
+            # Ethics flag dobra a penalidade Raegis (sicofância detectada)
+            effective_raegis  = ethics_flag == 0x01 ? raegis_penalty * 2.0f0 : raegis_penalty
+            # Guardian penaliza anomalias comportamentais (máx 0.5 — não domina o reward)
+            total_penalty     = effective_raegis + guardian_penalty
+            combined_reward   = max(0.0f0, combined - total_penalty)
 
             if combined_reward > 0.0f0
-                @info "   [RLAIF] Gemini=$(round(gemini_score,digits=3)) MNS=$(round(mns_local,digits=3)) Penalty=$(round(effective_penalty,digits=3)) → Reward=$(round(combined_reward,digits=3))"
+                @info "   [RLAIF] Gemini=$(round(gemini_score,digits=3)) MNS=$(round(mns_local,digits=3)) Raegis=$(round(effective_raegis,digits=3)) Guardian=$(round(guardian_penalty,digits=3)) → Reward=$(round(combined_reward,digits=3))"
 
                 # Aplica passo de reforço em amostra aleatória do dataset
                 rl_idx  = rand(1:length(dataset))
