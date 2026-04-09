@@ -33,15 +33,20 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ── Env ───────────────────────────────────────────────────────────────────────
-dotenv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
-if not os.path.exists(dotenv_path):
-    dotenv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".env"))
-load_dotenv(dotenv_path)
+# Tenta múltiplos caminhos para encontrar o .env
+for _candidate in [
+    os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".env")),
+    os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".env")),
+    os.path.normpath(os.path.join(os.path.dirname(__file__), ".env")),
+]:
+    if os.path.exists(_candidate):
+        load_dotenv(_candidate)
+        break
 
 BERCARIO_FILE = os.path.normpath(os.path.join(os.path.dirname(__file__), "bercario_data.jsonl"))
-PAIRS_PER_CYCLE = 3      # pares gerados por ciclo
-CYCLE_SLEEP     = 300    # segundos entre ciclos (5 min)
-MAX_ENTRIES     = 500    # não deixa o arquivo crescer infinitamente
+PAIRS_PER_CYCLE = 10     # pares gerados por ciclo
+CYCLE_SLEEP     = 60     # segundos entre ciclos (1 min)
+MAX_ENTRIES     = 3000   # não deixa o arquivo crescer infinitamente
 
 # ── Tópicos para diversificar o dataset ───────────────────────────────────────
 TOPICS = [

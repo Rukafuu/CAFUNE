@@ -282,7 +282,7 @@ function train!(model::BidirectionalTransformer, md::MaskDiffusion,
     total_samples = length(dataset)
     total_steps = epochs * total_samples
     warmup_steps = floor(Int, total_steps * warmup_ratio)
-    min_lr = Float32(max_lr / 10.0)
+    min_lr = warmup_ratio == 0.0 ? Float32(max_lr) : Float32(max_lr / 10.0)  # LR fixo se sem warmup
 
     total_step_count = 0
     best_loss = Inf

@@ -145,3 +145,84 @@ Fração de tokens que devem permanecer mascarados no passo `step`.
 function mask_ratio_at_step(step::Int, num_steps::Int)
     return Float32(step / num_steps)
 end
+
+# ============================================================
+#  Geração Iterativa (Reverse Diffusion)
+# ============================================================
+
+"""
+    generate(model, md, seq_len; num_steps, temperature) → Vector{Int}
+
+Gera uma sequência via denoising iterativo (LLaDA-style).
+
+Começa com tudo mascarado e vai revelando os tokens mais
+confiantes a cada passo, do mais ruidoso ao mais limpo.
+
+# Argumentos
+- `model` — BidirectionalTransformer treinado
+- `md::MaskDiffusion` — configuração do processo
+- `seq_len::Int` — comprimento da sequência a gerar
+- `num_steps::Int` — número de passos de denoising (padrão: 10)
+- `temperature::Float32` — temperatura de amostragem (padrão: 1.0)
+"""
+function generate(model, md::MaskDiffusion, seq_len::Int;
+                  num_steps::Int=10, temperature::Float32=1.0f0)
+
+    # Começa completamente mascarado
+    tokens = fill(md.mask_token_id, seq_len)
+
+    for step in num_steps:-1:1
+        # Fração de tokens a revelar neste passo
+        t_now  = Float32(step / num_steps)
+        t_next = Float32((step - 1) / num_steps)
+
+        # Prediz logits para todos os tokens
+        logits = model(tokens)   # (vocab_size+1, seq_len)
+
+        # Zera o logit do próprio MASK para nunca amostrar MASK como resposta
+        logits[md.mask_token_id, :] .= -Inf32
+
+        # Amostragem com temperatura
+        probs = similar(logits)
+        for i in 1:seq_len
+            l = logits[:, i] ./ temperature
+            l .-= maximum(l)
+            e  = exp.(l)
+            probs[:, i] = e ./ sum(e)
+        end
+
+        # Confiança = probabilidade máxima em cada posição
+        confidences = [maximum(probs[:, i]) for i in 1:seq_len]
+
+        # Quantos tokens revelar neste passo
+        n_masked_now  = count(==(md.mask_token_id), tokens)
+        n_masked_next = round(Int, t_next * seq_len)
+        n_to_reveal   = max(0, n_masked_now - n_masked_next)
+
+        if n_to_reveal > 0 && n_masked_now > 0
+            # Índices ainda mascarados
+            masked_idx = findall(==(md.mask_token_id), tokens)
+            # Ordena por confiança decrescente e revela os mais confiantes
+            conf_masked = confidences[masked_idx]
+            order = sortperm(conf_masked, rev=true)
+            to_reveal = masked_idx[order[1:min(n_to_reveal, length(order))]]
+
+            for i in to_reveal
+                # Amostra token da distribuição
+                r = rand(Float32)
+                cumsum_p = 0.0f0
+                chosen = 1
+                for k in 1:size(probs, 1)
+                    cumsum_p += probs[k, i]
+                    if r <= cumsum_p
+                        chosen = k
+                        break
+                    end
+                end
+                tokens[i] = chosen
+            end
+        end
+    end
+
+    return tokens
+end

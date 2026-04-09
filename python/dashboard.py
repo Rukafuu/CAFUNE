@@ -28,8 +28,9 @@ except Exception as e:
 app = Flask(__name__)
 CORS(app) # Habilitar CORS para dev local
 
-MEM_FILE = "cafune_brain.mem"
-MEM_SIZE = 1024
+MEM_FILE  = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "cafune_brain.mem"))
+MEM_SIZE  = 1024
+TRAIN_LOG = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "julia", "training_log.jsonl"))
 
 # Histórico para os gráficos do Recharts
 history = {
@@ -63,6 +64,12 @@ def index():
     .chart-box { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
     .chart-box h3 { font-size: 0.75em; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
     canvas { width: 100% !important; height: 100px !important; }
+    .progress-bar-bg { background: #1a1a1a; border-radius: 4px; height: 8px; margin: 6px 0 10px; }
+    .progress-bar-fill { background: #9b59b6; height: 8px; border-radius: 4px; transition: width 0.5s; }
+    .epoch-table { width: 100%; border-collapse: collapse; font-size: 0.75em; }
+    .epoch-table th { color: #555; text-align: left; padding: 4px 8px; border-bottom: 1px solid #222; }
+    .epoch-table td { padding: 4px 8px; border-bottom: 1px solid #1a1a1a; }
+    .epoch-table tr:first-child td { color: #2ecc71; }
     .log-box { background: #111; border: 1px solid #222; border-radius: 8px; padding: 12px; height: 160px; overflow-y: auto; font-size: 0.75em; }
     .log-box .entry { padding: 2px 0; border-bottom: 1px solid #1a1a1a; }
     .log-box .entry .ts { color: #555; margin-right: 8px; }
@@ -113,12 +120,30 @@ def index():
     </div>
   </div>
 
+  <p class="section-title">Progresso do Treino</p>
+  <div class="chart-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <span id="epoch-label" style="font-size:0.85em;color:#9b59b6;">Epoch --/--</span>
+      <span id="epoch-loss" style="font-size:0.85em;color:#f1c40f;">Loss: --</span>
+      <span id="epoch-best" style="font-size:0.75em;color:#555;">Best: --</span>
+      <span id="epoch-dataset" style="font-size:0.75em;color:#555;">Dataset: -- seqs</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="epoch-bar" style="width:0%"></div></div>
+    <div style="overflow-x:auto;">
+      <table class="epoch-table">
+        <thead><tr><th>Epoch</th><th>Loss</th><th>Best</th><th>Dataset</th><th>Hora</th></tr></thead>
+        <tbody id="epoch-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <p class="section-title">Resposta Atual do Modelo</p>
   <div class="log-box" id="response-box">
     <div class="entry"><span class="ts">--:--:--</span><span>Aguardando output do modelo...</span></div>
   </div>
 
 <script>
+let lastResponse = '';
 // Mini chart renderer (canvas, sem dependência externa)
 function makeChart(canvasId, color) {
   const canvas = document.getElementById(canvasId);
@@ -180,27 +205,54 @@ async function tick() {
     geminiChart.push(d.gemini_score || 0);
     penaltyChart.push((d.raegis_penalty || 0) + (d.guardian_penalty || 0));
 
-    if (d.response && d.response.trim()) {
+    if (d.response && d.response.trim() && d.response !== lastResponse) {
+      lastResponse = d.response;
       const box = document.getElementById('response-box');
       const ts = new Date().toTimeString().slice(0,8);
       const div = document.createElement('div');
       div.className = 'entry ok';
-      div.innerHTML = '<span class="ts">' + ts + '</span>' + d.response.slice(0, 120);
+      div.innerHTML = '<span class="ts">' + ts + '</span>' + d.response.slice(0, 160);
       box.insertBefore(div, box.firstChild);
       if (box.children.length > 30) box.removeChild(box.lastChild);
     }
   } catch(e) { /* aguarda motor */ }
 }
 
+async function tickTraining() {
+  try {
+    const r = await fetch('/api/training_log');
+    const rows = await r.json();
+    if (!rows.length) return;
+    const last = rows[rows.length - 1];
+    const pct  = last.total > 0 ? Math.round((last.epoch / last.total) * 100) : 0;
+    document.getElementById('epoch-label').textContent   = `Epoch ${last.epoch}/${last.total}`;
+    document.getElementById('epoch-loss').textContent    = `Loss: ${last.loss}`;
+    document.getElementById('epoch-best').textContent    = `Best: ${last.best_loss}`;
+    document.getElementById('epoch-dataset').textContent = `Dataset: ${last.dataset_n} seqs`;
+    document.getElementById('epoch-bar').style.width     = pct + '%';
+    const tbody = document.getElementById('epoch-tbody');
+    tbody.innerHTML = '';
+    for (let i = rows.length - 1; i >= Math.max(0, rows.length - 10); i--) {
+      const e = rows[i];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${e.epoch}</td><td>${e.loss}</td><td>${e.best_loss}</td><td>${e.dataset_n}</td><td>${e.timestamp}</td>`;
+      tbody.appendChild(tr);
+    }
+    lossChart.push(parseFloat(last.loss) || 0);
+  } catch(e) { /* aguarda log */ }
+}
+
 setInterval(tick, 1500);
+setInterval(tickTraining, 3000);
 tick();
+tickTraining();
 </script>
 </body>
 </html>"""
 
 @app.route('/api/mmap')
 def get_mmap():
-    mem_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "cafune_brain.mem"))
+    mem_path = MEM_FILE
     if not os.path.exists(mem_path):
         return jsonify({"error": "mmap not found"}), 404
     try:
@@ -302,6 +354,24 @@ def process_prompt():
 
         
     return jsonify({"response": response})
+
+@app.route('/api/training_log')
+def get_training_log():
+    if not os.path.exists(TRAIN_LOG):
+        return jsonify([])
+    rows = []
+    try:
+        with open(TRAIN_LOG, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        rows.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        pass
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    return jsonify(rows[-50:])  # últimas 50 epochs
 
 @app.route('/api/reward', methods=['POST'])
 def send_reward():

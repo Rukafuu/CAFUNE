@@ -38,3 +38,7 @@ venv/
 temp/
 /tmp/
 .DS_Store
+
+# Scripts de execução local
+*.bat
+start_*.cmd

@@ -47,7 +47,11 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["python/data_generator.py"],
       "port": 3006,
-      "autoPort": true
+      "autoPort": true,
+      "env": {
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+        "RAEGIS_PATH": "C:\\Users\\conta\\Documents\\Raegis\\python"
+      }
     }
   ]
 }
