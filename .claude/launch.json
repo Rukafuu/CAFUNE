@@ -1,0 +1,53 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Dashboard (Flask :5000)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["python/dashboard.py"],
+      "port": 5000
+    },
+    {
+      "name": "Julia Motor (Treino + RLAIF)",
+      "runtimeExecutable": "julia",
+      "runtimeArgs": ["--project=julia", "julia/main_training.jl"],
+      "port": 3001,
+      "autoPort": true
+    },
+    {
+      "name": "Gemini Teacher (RLAIF reward)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["python/gemini_teacher.py"],
+      "port": 3002,
+      "autoPort": true
+    },
+    {
+      "name": "Raegis Sentinel (Auditoria ética)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["python/raegis_sentinel.py"],
+      "port": 3003,
+      "autoPort": true
+    },
+    {
+      "name": "Guardian Reward (Anomalia comportamental)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["python/guardian_reward.py"],
+      "port": 3004,
+      "autoPort": true
+    },
+    {
+      "name": "RLAIF Curriculum Scheduler",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["python/rlaif_scheduler.py"],
+      "port": 3005,
+      "autoPort": true
+    },
+    {
+      "name": "Data Generator (Gemini + Web)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["python/data_generator.py"],
+      "port": 3006,
+      "autoPort": true
+    }
+  ]
+}
