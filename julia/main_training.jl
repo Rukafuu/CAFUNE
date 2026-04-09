@@ -55,29 +55,56 @@ end
 # ── Carregamento do dataset ───────────────────────────────────────
 
 """
-Carrega social_data.json, remove duplicatas e tokeniza.
+Carrega social_data.json + bercario_data.jsonl, remove duplicatas e tokeniza.
+Aceita schemas: {user, response} e {prompt, target}.
 Retorna vetor de matrizes (seq_len × 1) prontas para train!().
 """
 function load_dataset(corpus_file::String, char2id::Dict{String,Int}, seq_len::Int)
-    raw     = JSON.parsefile(corpus_file)
     seen    = Set{String}()
     dataset = Vector{Matrix{Int}}()
+    total_raw = 0
 
-    for entry in raw
-        user     = strip(get(entry, "user",     ""))
-        response = strip(get(entry, "response", ""))
-        text     = isempty(response) ? user : user * " " * response
-        isempty(text) && continue
-        text in seen  && continue
+    function add_entry!(text::String)
+        isempty(text) && return
+        text in seen  && return
         push!(seen, text)
-
         ids    = tokenize_text(text, char2id)
         padded = pad_or_truncate(ids, seq_len)
         push!(dataset, reshape(padded, seq_len, 1))
     end
 
-    duplicates = length(raw) - length(dataset)
-    @info "Dataset: $(length(dataset)) sequências únicas | $duplicates duplicatas removidas"
+    # ── social_data.json ({user, response}) ──────────────────────
+    if isfile(corpus_file)
+        raw = JSON.parsefile(corpus_file)
+        total_raw += length(raw)
+        for entry in raw
+            user     = strip(get(entry, "user",     ""))
+            response = strip(get(entry, "response", ""))
+            add_entry!(isempty(response) ? user : user * " " * response)
+        end
+    end
+
+    # ── bercario_data.jsonl ({prompt, target} ou {prompt, response}) ──
+    bercario = normpath(joinpath(dirname(corpus_file), "bercario_data.jsonl"))
+    if isfile(bercario)
+        open(bercario, "r") do f
+            for line in eachline(f)
+                line = strip(line)
+                isempty(line) && continue
+                try
+                    entry    = JSON.parse(line)
+                    prompt   = strip(get(entry, "prompt",   ""))
+                    target   = strip(get(entry, "target",   get(entry, "response", "")))
+                    total_raw += 1
+                    add_entry!(isempty(target) ? prompt : prompt * " " * target)
+                catch
+                end
+            end
+        end
+    end
+
+    duplicates = total_raw - length(dataset)
+    @info "Dataset: $(length(dataset)) sequencias unicas de $total_raw entradas ($duplicates duplicatas)"
     return dataset
 end
 
@@ -282,6 +309,25 @@ function start_training_session()
                 @printf("   [RLAIF] Loss RLAIF: %.4f\n", rl_loss)
             else
                 @info "   [RLAIF] Reward combinado zerado ou nulo — sem atualização RLAIF neste epoch."
+            end
+        end
+
+        # ── Escreve sample de output no mmap (buffer 200-600) ──────
+        if mm !== nothing && !isempty(dataset)
+            try
+                sample_tokens = dataset[rand(1:length(dataset))][:, 1]
+                t_sample = 0.5f0  # meio ruído
+                masked_sample, _ = forward_mask_functional(md, sample_tokens, t_sample)
+                logits_sample = model(masked_sample)           # (vocab_size, seq_len)
+                pred_ids = [argmax(logits_sample[:, i]) for i in 1:size(logits_sample, 2)]
+                # Decodifica: busca char2id invertido
+                id2char = Dict(v => k for (k, v) in char2id)
+                decoded = join([get(id2char, id, "?") for id in pred_ids])
+                decoded_bytes = Vector{UInt8}(codeunits(decoded)[1:min(end, 399)])
+                mm[201:200+length(decoded_bytes)] .= decoded_bytes
+                mm[201+length(decoded_bytes):600] .= 0x00
+            catch
+                # Não quebra o treino se o sample falhar
             end
         end
 
