@@ -3,16 +3,22 @@ import time
 import os
 import struct
 import sys
+import io
 from dotenv import load_dotenv
 
-# Carregar variáveis de ambiente do arquivo .env na raiz do projeto
+# Força stdout UTF-8 no Windows (evita UnicodeEncodeError com emojis)
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+# Carregar variáveis de ambiente — tenta ../../.env e depois o diretório do script
 dotenv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+if not os.path.exists(dotenv_path):
+    dotenv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".env"))
 load_dotenv(dotenv_path)
 
 if os.getenv("GEMINI_API_KEY"):
-    print("✅ GEMINI_API_KEY detectada com sucesso.")
+    print("[OK] GEMINI_API_KEY detectada com sucesso.")
 else:
-    print("❌ Falha crítica: GEMINI_API_KEY não encontrada no .env.")
+    print("[WARN] GEMINI_API_KEY nao encontrada no .env.")
 
 # Injetar o Raegis NATIVO no Path (configure RAEGIS_PATH no .env ou como variável de ambiente)
 RAEGIS_PATH = os.getenv("RAEGIS_PATH")
@@ -134,16 +140,17 @@ def sentinel_loop():
                         mm[PENALTY_OFFSET:PENALTY_OFFSET+4] = struct.pack('f', 0.0)
                         mm[ETHICS_FLAG_OFFSET] = 0x00
                     
-                    # --- NOVIDADE: SALVAR NO HISTÓRICO PARA O RAEGIS ---
+                    # --- SALVAR NO HISTÓRICO PARA O GUARDIAN ---
                     import json
                     history_file = os.path.join(os.path.dirname(__file__), "neural_history.jsonl")
+                    effective_penalty = penalty if flagged else 0.0
                     log_entry = {
                         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
                         "prompt": prompt_text,
                         "response": output,
-                        "reward": refined_reward,
+                        "reward": float(max(0.0, current_reward - effective_penalty)),
                         "flagged": flagged,
-                        "is_sycophancy": flagged and "Sicofancia" in (f"Raegis Audit"),
+                        "is_sycophancy": flagged,
                     }
                     with open(history_file, "a", encoding="utf-8") as hf:
                         hf.write(json.dumps(log_entry) + "\n")

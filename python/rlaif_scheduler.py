@@ -20,10 +20,15 @@ Offsets mmap lidos:
 import mmap
 import time
 import os
+import sys
+import io
 import json
 import random
 import struct
 from filelock import FileLock, Timeout
+
+# Força stdout UTF-8 no Windows
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 MEM_FILE       = os.path.normpath(os.path.join(os.path.dirname(__file__), "cafune_brain.mem"))

@@ -23,6 +23,7 @@ const CORPUS_FILE = normpath(joinpath(SCRIPT_DIR, "..", "python", "social_data.j
 const VOCAB_FILE  = normpath(joinpath(SCRIPT_DIR, "..", "vocab.json"))
 const CKPT_DIR    = joinpath(SCRIPT_DIR, "checkpoints")
 const BEST_CKPT   = joinpath(CKPT_DIR, "cafune_best.bson")
+const TRAIN_LOG   = joinpath(SCRIPT_DIR, "training_log.jsonl")
 
 # ── Tokenizador character-level ───────────────────────────────────
 
@@ -44,8 +45,10 @@ function tokenize_text(text::String, char2id::Dict{String,Int};
     return ids
 end
 
-"""Pad ou trunca para seq_len."""
-function pad_or_truncate(ids::Vector{Int}, seq_len::Int; pad_id::Int=0)
+"""Pad ou trunca para seq_len.
+pad_id=1 (UNK) porque Julia usa índices 1-based — índice 0 é inválido no embedding.
+"""
+function pad_or_truncate(ids::Vector{Int}, seq_len::Int; pad_id::Int=1)
     length(ids) >= seq_len && return ids[1:seq_len]
     return vcat(ids, fill(pad_id, seq_len - length(ids)))
 end
@@ -53,29 +56,56 @@ end
 # ── Carregamento do dataset ───────────────────────────────────────
 
 """
-Carrega social_data.json, remove duplicatas e tokeniza.
+Carrega social_data.json + bercario_data.jsonl, remove duplicatas e tokeniza.
+Aceita schemas: {user, response} e {prompt, target}.
 Retorna vetor de matrizes (seq_len × 1) prontas para train!().
 """
 function load_dataset(corpus_file::String, char2id::Dict{String,Int}, seq_len::Int)
-    raw     = JSON.parsefile(corpus_file)
     seen    = Set{String}()
     dataset = Vector{Matrix{Int}}()
+    total_raw = 0
 
-    for entry in raw
-        user     = strip(get(entry, "user",     ""))
-        response = strip(get(entry, "response", ""))
-        text     = isempty(response) ? user : user * " " * response
-        isempty(text) && continue
-        text in seen  && continue
+    function add_entry!(text::String)
+        isempty(text) && return
+        text in seen  && return
         push!(seen, text)
-
         ids    = tokenize_text(text, char2id)
         padded = pad_or_truncate(ids, seq_len)
         push!(dataset, reshape(padded, seq_len, 1))
     end
 
-    duplicates = length(raw) - length(dataset)
-    @info "Dataset: $(length(dataset)) sequências únicas | $duplicates duplicatas removidas"
+    # ── social_data.json ({user, response}) ──────────────────────
+    if isfile(corpus_file)
+        raw = JSON.parsefile(corpus_file)
+        total_raw += length(raw)
+        for entry in raw
+            user     = strip(get(entry, "user",     ""))
+            response = strip(get(entry, "response", ""))
+            add_entry!(isempty(response) ? user : user * " " * response)
+        end
+    end
+
+    # ── bercario_data.jsonl ({prompt, target} ou {prompt, response}) ──
+    bercario = normpath(joinpath(dirname(corpus_file), "bercario_data.jsonl"))
+    if isfile(bercario)
+        open(bercario, "r") do f
+            for line in eachline(f)
+                line = strip(line)
+                isempty(line) && continue
+                try
+                    entry    = JSON.parse(line)
+                    prompt   = strip(get(entry, "prompt",   ""))
+                    target   = strip(get(entry, "target",   get(entry, "response", "")))
+                    total_raw += 1
+                    add_entry!(isempty(target) ? prompt : prompt * " " * target)
+                catch
+                end
+            end
+        end
+    end
+
+    duplicates = total_raw - length(dataset)
+    @info "Dataset: $(length(dataset)) sequencias unicas de $total_raw entradas ($duplicates duplicatas)"
     return dataset
 end
 
@@ -154,9 +184,9 @@ function start_training_session()
     N_HEADS      = 8
     N_LAYERS     = 6
     D_FF         = 1024
-    EPOCHS       = 20
-    MAX_LR       = 3e-4
-    WARMUP_RATIO = 0.15
+    EPOCHS       = 100
+    MAX_LR       = 1e-5   # fine-tuning estável — sem oscilação
+    WARMUP_RATIO = 0.0   # sem warmup — LR fixo para fine-tuning estável
 
     # ── 1. Vocabulário ──────────────────────────────────────────
     @info "1. Carregando vocabulário..."
@@ -239,10 +269,12 @@ function start_training_session()
         avg_loss     = mean(epoch_losses)
         @printf("   Loss estimada (n=%d): %.4f\n", sample_n, avg_loss)
 
-        # ── Escrita do timestamp de geração no mmap ──
+        # ── Escrita do timestamp e loss no mmap ──
         if mm !== nothing
-            ts_bytes = reinterpret(UInt8, [Float64(Dates.datetime2unix(now()))])
+            ts_bytes   = reinterpret(UInt8, [Float64(Dates.datetime2unix(now()))])
             mm[21:28] .= ts_bytes   # offset 20 (0-based) = índice 21 (1-based)
+            loss_bytes = reinterpret(UInt8, [Float64(avg_loss)])
+            mm[33:40] .= loss_bytes  # offset 32 (0-based) = índice 33 (1-based)
         end
 
         # ── Leitura e combinação dos sinais RLAIF ──
@@ -281,6 +313,33 @@ function start_training_session()
             else
                 @info "   [RLAIF] Reward combinado zerado ou nulo — sem atualização RLAIF neste epoch."
             end
+        end
+
+        # ── Geração iterativa e escrita no mmap (buffer 200-600) ──
+        if mm !== nothing
+            try
+                id2char = Dict(v => k for (k, v) in char2id)
+                gen_ids = generate(model, md, SEQ_LEN; num_steps=10, temperature=0.8f0)
+                decoded = join([get(id2char, id, "") for id in gen_ids if id != md.mask_token_id && id > 4])
+                decoded_bytes = Vector{UInt8}(codeunits(decoded)[1:min(end, 399)])
+                mm[201:200+length(decoded_bytes)] .= decoded_bytes
+                mm[201+length(decoded_bytes):600] .= 0x00
+            catch
+                # Não quebra o treino se a geração falhar
+            end
+        end
+
+        # ── Log de progresso (lido pelo dashboard) ──
+        open(TRAIN_LOG, "a") do f
+            entry = JSON.json(Dict(
+                "epoch"      => actual_epoch,
+                "total"      => start_epoch + EPOCHS,
+                "loss"       => round(Float64(avg_loss), digits=4),
+                "best_loss"  => round(Float64(min(avg_loss, best_loss)), digits=4),
+                "timestamp"  => Dates.format(now(), "HH:MM:SS"),
+                "dataset_n"  => length(dataset),
+            ))
+            println(f, entry)
         end
 
         # ── Checkpoints ──
