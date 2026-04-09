@@ -7,14 +7,17 @@ import io
 from dotenv import load_dotenv
 from tokenizer import BPETokenizer
 
-# Força stdout UTF-8 no Windows
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+# Força stdout UTF-8 no Windows (sem substituir o stream inteiro)
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # Carregar variáveis de ambiente — tenta ../../.env e depois ../.env
 dotenv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 if not os.path.exists(dotenv_path):
     dotenv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".env"))
-load_dotenv(dotenv_path)
+load_dotenv(dotenv_path, override=True)
 
 # Configurar API Gemini — usa google.genai (novo SDK)
 api_key = os.getenv("GEMINI_API_KEY")
@@ -62,7 +65,7 @@ def gemini_teacher_loop():
     if os.path.exists(vocab_path):
         tokenizer.load(vocab_path)
 
-    mem_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "cafune_brain.mem"))
+    mem_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "cafune_brain.mem"))
     with open(mem_file, "r+b") as f:
         mm = mmap.mmap(f.fileno(), 1024)
         print("\n=== [MESTRIADO GEMINI: PROFESSOR RLAIF ATIVO (PRO)] ===")
@@ -87,8 +90,8 @@ def gemini_teacher_loop():
                 response_data = mm[200:599].split(b'\x00')[0]
                 output = response_data.decode("utf-8", errors="ignore")
 
-                # Só avaliar se: texto presente, engine idle, e timestamp mudou
-                if len(output.strip()) > 2 and mm[0] == 0 and current_ts != last_seen_ts:
+                # Só avaliar se: texto presente E timestamp mudou (novo output do modelo)
+                if len(output.strip()) > 2 and current_ts != last_seen_ts:
                     prompt_text_raw = mm[600:1000].split(b'\x00')[0].decode("utf-8", errors="ignore")
                     print(f"\n[TEXTO DO ALUNO]: \"{output[:80]}\"")
                     print("Solicitando avaliacao ao Gemini (web grounding ativo)...")

@@ -197,6 +197,13 @@ function start_training_session()
     char2id, vocab_size = load_vocab(VOCAB_FILE)
     @info "   $vocab_size tokens carregados de $(basename(VOCAB_FILE))"
 
+    # Filtra tokens válidos para geração: apenas tokens curtos (≤4 chars)
+    # O vocab BPE tem tokens corrompidos com frases inteiras (IDs 90-460)
+    id2char     = Dict(v => k for (k, v) in char2id)
+    valid_ids   = [id for (id, tok) in id2char if length(tok) <= 4]
+    sort!(valid_ids)
+    @info "   $(length(valid_ids)) tokens válidos para geração (comprimento ≤ 4 chars)"
+
     # ── 2. Dataset ──────────────────────────────────────────────
     @info "2. Carregando dataset..."
     if !isfile(CORPUS_FILE)
@@ -319,7 +326,7 @@ function start_training_session()
         if mm !== nothing
             try
                 id2char = Dict(v => k for (k, v) in char2id)
-                gen_ids = generate(model, md, SEQ_LEN; num_steps=10, temperature=0.8f0)
+                gen_ids = generate(model, md, SEQ_LEN; num_steps=10, temperature=0.8f0, valid_ids=valid_ids)
                 decoded = join([get(id2char, id, "") for id in gen_ids if id != md.mask_token_id && id > 4])
                 decoded_bytes = Vector{UInt8}(codeunits(decoded)[1:min(end, 399)])
                 mm[201:200+length(decoded_bytes)] .= decoded_bytes

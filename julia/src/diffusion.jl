@@ -151,7 +151,7 @@ end
 # ============================================================
 
 """
-    generate(model, md, seq_len; num_steps, temperature) → Vector{Int}
+    generate(model, md, seq_len; num_steps, temperature, valid_ids) → Vector{Int}
 
 Gera uma sequência via denoising iterativo (LLaDA-style).
 
@@ -164,9 +164,13 @@ confiantes a cada passo, do mais ruidoso ao mais limpo.
 - `seq_len::Int` — comprimento da sequência a gerar
 - `num_steps::Int` — número de passos de denoising (padrão: 10)
 - `temperature::Float32` — temperatura de amostragem (padrão: 1.0)
+- `valid_ids::Union{Nothing,Vector{Int}}` — IDs permitidos na geração.
+  Se fornecido, logits de tokens fora deste conjunto são zerados.
+  Útil para filtrar tokens BPE inválidos/longos demais.
 """
 function generate(model, md::MaskDiffusion, seq_len::Int;
-                  num_steps::Int=10, temperature::Float32=1.0f0)
+                  num_steps::Int=10, temperature::Float32=1.0f0,
+                  valid_ids::Union{Nothing,Vector{Int}}=nothing)
 
     # Começa completamente mascarado
     tokens = fill(md.mask_token_id, seq_len)
@@ -181,6 +185,13 @@ function generate(model, md::MaskDiffusion, seq_len::Int;
 
         # Zera o logit do próprio MASK para nunca amostrar MASK como resposta
         logits[md.mask_token_id, :] .= -Inf32
+
+        # Filtra tokens inválidos (BPE corrompidos / muito longos)
+        if valid_ids !== nothing
+            all_ids = 1:size(logits, 1)
+            invalid_ids = setdiff(all_ids, valid_ids)
+            logits[invalid_ids, :] .= -Inf32
+        end
 
         # Amostragem com temperatura
         probs = similar(logits)
