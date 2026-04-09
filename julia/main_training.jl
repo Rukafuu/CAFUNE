@@ -44,8 +44,10 @@ function tokenize_text(text::String, char2id::Dict{String,Int};
     return ids
 end
 
-"""Pad ou trunca para seq_len."""
-function pad_or_truncate(ids::Vector{Int}, seq_len::Int; pad_id::Int=0)
+"""Pad ou trunca para seq_len.
+pad_id=1 (UNK) porque Julia usa índices 1-based — índice 0 é inválido no embedding.
+"""
+function pad_or_truncate(ids::Vector{Int}, seq_len::Int; pad_id::Int=1)
     length(ids) >= seq_len && return ids[1:seq_len]
     return vcat(ids, fill(pad_id, seq_len - length(ids)))
 end

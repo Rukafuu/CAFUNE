@@ -2,22 +2,37 @@ import mmap
 import time
 import os
 import struct
-import google.generativeai as genai
+import sys
+import io
 from dotenv import load_dotenv
 from tokenizer import BPETokenizer
 
-# Carregar variáveis de ambiente do arquivo .env na raiz do projeto (../../.env)
+# Força stdout UTF-8 no Windows
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+# Carregar variáveis de ambiente — tenta ../../.env e depois ../.env
 dotenv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+if not os.path.exists(dotenv_path):
+    dotenv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".env"))
 load_dotenv(dotenv_path)
 
-# Configurar API Gemini usando a chave do ambiente
+# Configurar API Gemini — usa google.genai (novo SDK)
 api_key = os.getenv("GEMINI_API_KEY")
+model = None
 if api_key:
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash') # Modelo Flash para estabilidade e velocidade
+    try:
+        from google import genai as google_genai
+        _client = google_genai.Client(api_key=api_key)
+        model = _client  # usamos _client.models.generate_content abaixo
+        print("[OK] Gemini SDK (google.genai) configurado.")
+    except ImportError:
+        # Fallback para SDK legado se google-genai não instalado
+        import google.generativeai as genai_legacy
+        genai_legacy.configure(api_key=api_key)
+        model = genai_legacy.GenerativeModel('gemini-1.5-flash')
+        print("[OK] Gemini SDK legado (google.generativeai) configurado.")
 else:
-    print("⚠️ [Mestriado] GEMINI_API_KEY não encontrada. Usando modo simulação.")
-    model = None
+    print("[WARN] GEMINI_API_KEY nao encontrada. Usando MNS local como fallback.")
 
 def gemini_teacher_loop():
     tokenizer = BPETokenizer()
@@ -77,13 +92,19 @@ def gemini_teacher_loop():
                     """
                     
                     try:
+                        import re
                         if model:
-                            response = model.generate_content(prompt)
-                            # Extrair o score MNS (procurando por "MNS: X.X")
-                            import re
-                            mns_match = re.search(r"MNS:\s*(\d+\.\d+|\d+)", response.text)
+                            # Suporta tanto google.genai (Client) quanto legado (GenerativeModel)
+                            if hasattr(model, 'models'):
+                                resp = model.models.generate_content(
+                                    model="gemini-2.0-flash", contents=prompt)
+                                resp_text = resp.text
+                            else:
+                                resp = model.generate_content(prompt)
+                                resp_text = resp.text
+                            mns_match = re.search(r"MNS:\s*(\d+\.\d+|\d+)", resp_text)
                             score = float(mns_match.group(1)) if mns_match else 0.5
-                            reason = response.text.split('\n')[-1]
+                            reason = resp_text.split('\n')[-1]
                         else:
                             # Fallback local: cálculo determinístico sem API
                             from mns_local import compute_mns

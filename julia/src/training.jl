@@ -242,18 +242,15 @@ function train_on_reward!(model::BidirectionalTransformer, md::MaskDiffusion,
                           opt_state_rl, tokens::AbstractMatrix, reward::Float32)
     reward = clamp(reward, 0.0f0, 1.0f0)
 
+    # Amostra t e máscara FORA do grafo (evita mutação dentro do Zygote)
+    t   = rand(Float32)
+    seq = tokens[:, 1]
+    masked, mask = forward_mask_functional(md, seq, t)
+
+    !any(mask) && return 0.0f0, opt_state_rl, model
+
     loss, grads = Zygote.withgradient(model) do m
-        # Amostra t e aplica mascaramento fora do grafo (purificação Zygote)
-        t = rand(Float32)
-        seq = tokens[:, 1]
-        masked, mask = forward_mask(md, seq, t)
-
-        if !any(mask)
-            return 0.0f0
-        end
-
         logits = m(masked)
-        # Loss de difusão pesada pelo reward: alto reward → reforça; baixo → penaliza
         reward * cross_entropy_masked(logits, seq, mask)
     end
 

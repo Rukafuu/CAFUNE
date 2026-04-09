@@ -71,6 +71,18 @@ function forward_mask(md::MaskDiffusion, tokens::Vector{Int}, t::Float32)
     return masked_tokens, mask
 end
 
+"""
+    forward_mask_functional(md, tokens, t) → (masked_tokens, mask)
+
+Versão sem mutação de forward_mask — compatível com Zygote.withgradient.
+Usa ifelse em vez de indexação in-place.
+"""
+function forward_mask_functional(md::MaskDiffusion, tokens::Vector{Int}, t::Float32)
+    mask = rand(Float32, length(tokens)) .< t
+    masked_tokens = ifelse.(mask, md.mask_token_id, tokens)
+    return masked_tokens, mask
+end
+
 # ============================================================
 #  Forward Process Batch — Adicionando Ruído (Mascaramento)
 # ============================================================
