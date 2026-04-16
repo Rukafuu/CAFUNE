@@ -29,7 +29,7 @@ app = Flask(__name__)
 CORS(app) # Habilitar CORS para dev local
 
 MEM_FILE  = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "cafune_brain.mem"))
-MEM_SIZE  = 1024
+MEM_SIZE  = 2048
 TRAIN_LOG = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "julia", "training_log.jsonl"))
 
 # Histórico para os gráficos do Recharts
@@ -84,7 +84,7 @@ def index():
 </head>
 <body>
   <h1>&#x1F9DF; CAFUNE Monitor</h1>
-  <p class="subtitle">Live RLAIF Training Dashboard &mdash; Raegis + Gemini + Guardian</p>
+  <p class="subtitle">Live RLAIF Training Dashboard &mdash; Raegis + BitNet + Flair + Guardian</p>
 
   <p class="section-title">Estado do Motor</p>
   <div class="grid">
@@ -95,7 +95,7 @@ def index():
       </div>
     </div>
     <div class="card"><div class="label">Loss Atual</div><div class="value yellow" id="loss-val">--</div></div>
-    <div class="card"><div class="label">Gemini MNS</div><div class="value purple" id="gemini-val">--</div></div>
+    <div class="card"><div class="label">MNS Score</div><div class="value purple" id="gemini-val">--</div></div>
     <div class="card"><div class="label">MNS Local</div><div class="value cyan" id="mns-val">--</div></div>
     <div class="card"><div class="label">Raegis Penalty</div><div class="value red" id="raegis-val">--</div></div>
     <div class="card"><div class="label">Guardian Penalty</div><div class="value red" id="guardian-val">--</div></div>
@@ -103,7 +103,13 @@ def index():
     <div class="card"><div class="label">Reward Final</div><div class="value green" id="reward-val">--</div></div>
   </div>
 
-  <p class="section-title">Histórico de Loss</p>
+  <p class="section-title">Curva de Loss Completa</p>
+  <div class="chart-box">
+    <h3>Loss por Epoch (histórico completo)</h3>
+    <canvas id="lossFullChart" style="height:180px !important;"></canvas>
+  </div>
+
+  <p class="section-title">Histórico ao Vivo (últimas 40 amostras)</p>
   <div class="chart-box">
     <h3>Loss (difusão mascarada)</h3>
     <canvas id="lossChart"></canvas>
@@ -111,7 +117,7 @@ def index():
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
     <div class="chart-box">
-      <h3>Gemini MNS Score</h3>
+      <h3>MNS Score (BitNet + Flair)</h3>
       <canvas id="geminiChart"></canvas>
     </div>
     <div class="chart-box">
@@ -172,6 +178,68 @@ function makeChart(canvasId, color) {
 const lossChart    = makeChart('lossChart',    '#f1c40f');
 const geminiChart  = makeChart('geminiChart',  '#9b59b6');
 const penaltyChart = makeChart('penaltyChart', '#e74c3c');
+
+// Full loss curve from training_log
+function renderFullLoss(rows) {
+  const canvas = document.getElementById('lossFullChart');
+  if (!canvas || rows.length < 2) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || canvas.width;
+  const H = canvas.offsetHeight || 180;
+  canvas.width = W; canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  const losses = rows.map(r => parseFloat(r.loss)).filter(v => !isNaN(v));
+  const bests  = rows.map(r => parseFloat(r.best_loss)).filter(v => !isNaN(v));
+  const allVals = [...losses, ...bests];
+  const minV = Math.min(...allVals), maxV = Math.max(...allVals);
+  const range = maxV - minV || 1;
+  const pad = 24;
+
+  function toY(v) { return H - pad - ((v - minV) / range) * (H - pad * 2); }
+  function toX(i, arr) { return pad + (i / (arr.length - 1)) * (W - pad * 2); }
+
+  // Grid lines
+  ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad + (i / 4) * (H - pad * 2);
+    ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W - pad, y); ctx.stroke();
+    const label = (maxV - (i / 4) * range).toFixed(3);
+    ctx.fillStyle = '#555'; ctx.font = '9px monospace';
+    ctx.fillText(label, 2, y + 3);
+  }
+
+  // Best loss line (dashed, cyan)
+  if (bests.length > 1) {
+    ctx.strokeStyle = '#1abc9c'; ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    bests.forEach((v, i) => { const x = toX(i, bests), y = toY(v); i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y); });
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Loss line (solid, yellow)
+  ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  losses.forEach((v, i) => { const x = toX(i, losses), y = toY(v); i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y); });
+  ctx.stroke();
+
+  // Legend
+  ctx.font = '9px monospace';
+  ctx.fillStyle = '#f1c40f'; ctx.fillText('■ loss', W - 80, 14);
+  ctx.fillStyle = '#1abc9c'; ctx.fillText('■ best', W - 40, 14);
+
+  // Epoch labels on x-axis
+  const step = Math.max(1, Math.floor(rows.length / 6));
+  rows.forEach((r, i) => {
+    if (i % step === 0 || i === rows.length - 1) {
+      const x = toX(i, losses);
+      ctx.fillStyle = '#555'; ctx.font = '8px monospace';
+      ctx.fillText(r.epoch, x - 6, H - 4);
+    }
+  });
+}
 
 const STATUS = { 0: 'IDLE', 1: 'PROCESSANDO', 2: 'CONCLUIDO', 3: 'ERRO' };
 
@@ -239,6 +307,7 @@ async function tickTraining() {
       tbody.appendChild(tr);
     }
     lossChart.push(parseFloat(last.loss) || 0);
+    renderFullLoss(rows);
   } catch(e) { /* aguarda log */ }
 }
 
@@ -257,7 +326,7 @@ def get_mmap():
         return jsonify({"error": "mmap not found"}), 404
     try:
         with open(mem_path, "r+b") as f:
-            mm = mmap.mmap(f.fileno(), 1024)
+            mm = mmap.mmap(f.fileno(), 2048)
             cmd_id          = mm[0]
             loss            = struct.unpack('d', mm[32:40])[0]
             gemini_score    = struct.unpack('f', mm[40:44])[0]
@@ -371,7 +440,7 @@ def get_training_log():
                         pass
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    return jsonify(rows[-50:])  # últimas 50 epochs
+    return jsonify(rows[-500:])  # últimas 500 epochs (curva completa)
 
 @app.route('/api/reward', methods=['POST'])
 def send_reward():
