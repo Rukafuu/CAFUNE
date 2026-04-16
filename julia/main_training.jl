@@ -289,7 +289,7 @@ function start_training_session()
         if mm !== nothing
             try
                 id2char = Dict(v => k for (k, v) in char2id)
-                gen_ids = generate(model, md, SEQ_LEN; num_steps=10, temperature=1.0f0, valid_ids=valid_ids)
+                gen_ids = generate(model, md, SEQ_LEN; num_steps=20, temperature=0.5f0, valid_ids=valid_ids)
                 decoded = join([get(id2char, id, "") for id in gen_ids if id != md.mask_token_id && id > 4])
                 decoded_bytes = Vector{UInt8}(codeunits(decoded)[1:min(end, 399)])
                 mm[201:200+length(decoded_bytes)] .= decoded_bytes
