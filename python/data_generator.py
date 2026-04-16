@@ -294,7 +294,11 @@ def run_generator():
             entry = generate_pair_llm(topic)
             if entry is None:
                 continue
-            if entry["prompt"] in seen_prompts:
+
+            # Templates locais podem repetir prompt — permite com variação no target
+            # Pares do BitNet são deduplicados normalmente (conteúdo único)
+            is_template = entry.get("source") == "local-template"
+            if entry["prompt"] in seen_prompts and not is_template:
                 logger.info("  [skip] Duplicata: %s", entry["prompt"][:50])
                 continue
 
