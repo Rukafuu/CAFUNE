@@ -135,7 +135,14 @@ def run_logger():
         logger.error("[wandb] cafune_brain.mem não encontrado: %s", MEM_FILE)
         return
 
-    last_line = 0
+    # Começa do fim do arquivo — ignora histórico já logado
+    if os.path.exists(TRAIN_LOG):
+        with open(TRAIN_LOG, "r", encoding="utf-8") as f:
+            last_line = sum(1 for line in f if line.strip())
+    else:
+        last_line = 0
+    logger.info("[wandb] Iniciando a partir da linha %d do training_log", last_line)
+
     with open(MEM_FILE, "r+b") as f:
         mm = mmap.mmap(f.fileno(), 2048)
         logger.info("[wandb] Monitorando training_log.jsonl + mmap...")
