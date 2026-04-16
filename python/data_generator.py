@@ -186,21 +186,54 @@ PAIR_TEMPLATES = {
 }
 
 
-def generate_pair_local(topic: str) -> dict | None:
-    """Gera um par conversacional localmente sem chamar nenhuma API."""
-    templates = PAIR_TEMPLATES.get(topic)
-    if not templates:
-        return None
-    prompt_text, target_text = random.choice(templates)
-    # Adiciona pequena variação para não repetir idêntico
-    return {
-        "prompt":   prompt_text,
-        "target":   target_text,
-        "intent":   get_intent(topic),
-        "topic":    topic,
-        "grounded": False,
-        "source":   "local-template",
-    }
+def generate_pair_llm(topic: str) -> dict | None:
+    """
+    Gera um par conversacional usando BitNet 1-bit se disponível,
+    caso contrário usa templates locais como fallback.
+    """
+    try:
+        from bitnet_client import is_server_alive, generate_content
+        if not is_server_alive():
+            raise ConnectionError("BitNet offline")
+
+        prompt = f"""Estou criando um dataset para treinar uma IA chamada CAFUNE.
+Tópico sorteado: "{topic}"
+Crie um par de conversa com:
+1. Uma pergunta humana natural (prompt).
+2. Uma resposta empática e informativa da IA (target).
+
+Responda apenas em JSON:
+{{ "prompt": "a pergunta", "target": "a resposta perfeita" }}"""
+
+        resp = generate_content(
+            prompt,
+            system_instruction="Você constrói datasets JSON válidos em português brasileiro.",
+            as_json=True,
+            temperature=0.8,
+        )
+        if not resp:
+            raise ValueError("Resposta vazia do BitNet")
+
+        text = resp.replace("```json", "").replace("```", "").strip()
+        data = json.loads(text)
+
+        if not data.get("prompt") or not data.get("target"):
+            raise ValueError("JSON sem campos prompt/target")
+
+        logger.info("  [BitNet] par gerado | topic: %s", topic[:40])
+        return {
+            "prompt":  data["prompt"].strip(),
+            "target":  data["target"].strip(),
+            "intent":  get_intent(topic),
+            "topic":   topic,
+            "grounded": False,
+            "source":  "bitnet-llm",
+        }
+
+    except Exception as e:
+        # Fallback para templates locais
+        logger.debug("BitNet indisponível (%s) — usando template local", e)
+        return generate_pair_local(topic)
 
 
 # ── Persistência ──────────────────────────────────────────────────────────────
@@ -238,7 +271,7 @@ def append_entry(entry: dict):
 # ── Loop principal ────────────────────────────────────────────────────────────
 
 def run_generator():
-    logger.info("=== [DATA GENERATOR: LOCAL (sem API)] ===")
+    logger.info("=== [DATA GENERATOR: BitNet Local Server] ===")
     logger.info("Gerando %d pares por ciclo | salvando em %s",
                 PAIRS_PER_CYCLE, os.path.basename(BERCARIO_FILE))
 
@@ -258,7 +291,7 @@ def run_generator():
         added = 0
 
         for topic in topics_this_cycle:
-            entry = generate_pair_local(topic)
+            entry = generate_pair_llm(topic)
             if entry is None:
                 continue
             if entry["prompt"] in seen_prompts:
@@ -268,7 +301,7 @@ def run_generator():
             append_entry(entry)
             seen_prompts.add(entry["prompt"])
             added += 1
-            logger.info("  [local] +1 par | intent=%s | prompt: %s",
+            logger.info("  [BitNet] +1 par | intent=%s | prompt: %s",
                         entry["intent"], entry["prompt"][:60])
 
         logger.info("Ciclo %d concluido: %d/%d pares adicionados | proximo em %ds",
