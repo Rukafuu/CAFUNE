@@ -44,21 +44,42 @@ _flair_ok        = False
 
 
 def _load_models() -> bool:
-    """Carrega modelos Flair na primeira chamada. Retorna True se OK."""
+    """
+    Carrega modelos Flair na primeira chamada.
+    Carrega cada modelo independentemente — se POS falhar, usa só sentiment.
+    Retorna True se ao menos o sentiment carregou.
+    """
     global _sentiment_model, _pos_model, _flair_ok
     if _flair_ok:
         return True
+
+    from flair.models import TextClassifier, SequenceTagger
+
+    # Sentiment — essencial
     try:
-        from flair.models import TextClassifier, SequenceTagger
-        logger.info("[Flair] Carregando modelos (primeira vez pode demorar)...")
+        logger.info("[Flair] Carregando sentiment...")
         _sentiment_model = TextClassifier.load("sentiment")
-        _pos_model       = SequenceTagger.load("flair/pos-multi-fast")
-        _flair_ok = True
-        logger.info("[Flair] Modelos prontos — sentiment + pos-multi-fast")
-        return True
+        logger.info("[Flair] Sentiment OK")
     except Exception as e:
-        logger.warning("[Flair] Não disponível: %s — usando mns_local como fallback", e)
+        logger.warning("[Flair] Sentiment indisponível: %s", e)
         return False
+
+    # POS tagger — opcional, tenta variantes
+    for pos_name in ("flair/pos-multi-fast", "pos-multi-fast", "flair/pos-english-fast"):
+        try:
+            logger.info("[Flair] Carregando POS tagger (%s)...", pos_name)
+            _pos_model = SequenceTagger.load(pos_name)
+            logger.info("[Flair] POS OK (%s)", pos_name)
+            break
+        except Exception as e:
+            logger.warning("[Flair] POS '%s' falhou: %s", pos_name, e)
+
+    _flair_ok = True
+    if _pos_model is not None:
+        logger.info("[Flair] Pronto — sentiment + POS")
+    else:
+        logger.info("[Flair] Pronto — sentiment only (POS indisponível, grammar score = 0)")
+    return True
 
 
 def _sentiment_score(text: str) -> float:
@@ -77,8 +98,15 @@ def _sentiment_score(text: str) -> float:
 def _grammar_score(text: str) -> float:
     """
     Riqueza gramatical: proporção de tokens com POS tags de conteúdo.
-    Uma resposta com verbos + substantivos reais pontua mais alto.
+    Se POS model indisponível, usa heurística simples (diversidade lexical).
     """
+    if _pos_model is None:
+        # Fallback: diversidade de palavras únicas como proxy de riqueza gramatical
+        words = re.findall(r"[a-záàâãéèêíïóôõúüç]+", text.lower())
+        if not words:
+            return 0.0
+        return round(min(len(set(words)) / max(len(words), 1), 1.0), 4)
+
     from flair.data import Sentence
     sentence = Sentence(text)
     _pos_model.predict(sentence)

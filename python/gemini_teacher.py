@@ -36,12 +36,11 @@ W_FLAIR  = 0.4
 
 
 def _init_flair():
-    """Carrega modelos Flair. Retorna True se OK."""
+    """Carrega modelos Flair. Retorna True se ao menos sentiment carregou."""
     try:
         sys.path.insert(0, os.path.dirname(__file__))
         from mns_flair import _load_models
-        _load_models()
-        return True
+        return _load_models()
     except Exception as e:
         logger.warning("[Flair] Indisponível: %s", e)
         return False
