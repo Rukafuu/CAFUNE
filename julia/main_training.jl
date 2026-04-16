@@ -185,7 +185,7 @@ function start_training_session()
     N_LAYERS     = 6
     D_FF         = 1024
     EPOCHS       = 100
-    MAX_LR       = 1e-5   # fine-tuning estável — sem oscilação
+    MAX_LR       = 5e-6   # refinamento fino — LR reduzido para sair do platô
     WARMUP_RATIO = 0.0   # sem warmup — LR fixo para fine-tuning estável
 
     # ── 1. Vocabulário ──────────────────────────────────────────
@@ -242,7 +242,7 @@ function start_training_session()
     mm = nothing; s = nothing
     if isfile(MEM_FILE)
         s  = open(MEM_FILE, "r+")
-        mm = mmap(s, Vector{UInt8}, (1024,))
+        mm = mmap(s, Vector{UInt8}, (2048,))
         @info "   Barramento RLAIF ativo."
     else
         @warn "   cafune_brain.mem não encontrado — RLAIF desativado."
@@ -284,55 +284,77 @@ function start_training_session()
             mm[33:40] .= loss_bytes  # offset 32 (0-based) = índice 33 (1-based)
         end
 
+        # ── Geração iterativa e escrita no mmap (buffer 200-600) ──
+        # (deve ocorrer ANTES do handshake para o teacher ter texto para avaliar)
+        if mm !== nothing
+            try
+                id2char = Dict(v => k for (k, v) in char2id)
+                gen_ids = generate(model, md, SEQ_LEN; num_steps=10, temperature=1.0f0, valid_ids=valid_ids)
+                decoded = join([get(id2char, id, "") for id in gen_ids if id != md.mask_token_id && id > 4])
+                decoded_bytes = Vector{UInt8}(codeunits(decoded)[1:min(end, 399)])
+                mm[201:200+length(decoded_bytes)] .= decoded_bytes
+                mm[201+length(decoded_bytes):600] .= 0x00
+
+                # Escreve contexto de prompt no slot 600-1000 (avaliado pelo teacher)
+                prompt_ctx = "CAFUNE gerou no epoch $actual_epoch:"
+                prompt_bytes = Vector{UInt8}(codeunits(prompt_ctx)[1:min(end, 399)])
+                mm[601:600+length(prompt_bytes)] .= prompt_bytes
+                mm[601+length(prompt_bytes):1000] .= 0x00
+
+                # ── Handshake com BitNet Teacher ──────────────────────────────
+                # 0x03 = "novo output pronto, aguarda avaliação"
+                mm[1] = 0x03
+                @info "   [RLAIF] Handshake 0x03 → aguardando BitNet Teacher..."
+
+                wait_start = time()
+                while mm[1] != 0x04 && (time() - wait_start) < 30.0
+                    sleep(0.5)
+                end
+
+                if mm[1] == 0x04
+                    @info "   [RLAIF] Handshake 0x04 ✓ — teacher respondeu"
+                    mm[1] = 0x00  # reseta para o próximo epoch
+                else
+                    @warn "   [RLAIF] Teacher não respondeu em 30s — continuando sem score este epoch"
+                end
+            catch e
+                @warn "   [RLAIF] Erro na geração/handshake: $e"
+            end
+        end
+
         # ── Leitura e combinação dos sinais RLAIF ──
         if mm !== nothing
-            gemini_score     = reinterpret(Float32, mm[41:44])[1]   # offset 40
-            mns_local        = reinterpret(Float32, mm[45:48])[1]   # offset 44
+            mns_score        = reinterpret(Float32, mm[41:44])[1]   # offset 40 — score do teacher
+            mns_local        = reinterpret(Float32, mm[45:48])[1]   # offset 44 — score secundário
             raegis_penalty   = reinterpret(Float32, mm[49:52])[1]   # offset 48
             guardian_penalty = reinterpret(Float32, mm[53:56])[1]   # offset 52
             ethics_flag      = mm[61]                                # offset 60
 
             # Validar ranges (protege contra lixo na memória)
-            gemini_score     = isnan(gemini_score)     ? 0.0f0 : clamp(gemini_score,     0.0f0, 1.0f0)
+            mns_score        = isnan(mns_score)        ? 0.0f0 : clamp(mns_score,        0.0f0, 1.0f0)
             mns_local        = isnan(mns_local)        ? 0.0f0 : clamp(mns_local,        0.0f0, 1.0f0)
             raegis_penalty   = isnan(raegis_penalty)   ? 0.0f0 : clamp(raegis_penalty,   0.0f0, 1.0f0)
             guardian_penalty = isnan(guardian_penalty) ? 0.0f0 : clamp(guardian_penalty, 0.0f0, 0.5f0)
 
-            # Combina scores: Gemini tem peso 70% se disponível, senão usa só MNS local
-            α = gemini_score > 0.0f0 ? 0.7f0 : 0.0f0
-            combined = α * gemini_score + (1.0f0 - α) * mns_local
+            # Combina teacher score (70%) com MNS local (30%)
+            α = mns_score > 0.0f0 ? 0.7f0 : 0.0f0
+            combined = α * mns_score + (1.0f0 - α) * mns_local
 
             # Ethics flag dobra a penalidade Raegis (sicofância detectada)
             effective_raegis  = ethics_flag == 0x01 ? raegis_penalty * 2.0f0 : raegis_penalty
-            # Guardian penaliza anomalias comportamentais (máx 0.5 — não domina o reward)
             total_penalty     = effective_raegis + guardian_penalty
             combined_reward   = max(0.0f0, combined - total_penalty)
 
             if combined_reward > 0.0f0
-                @info "   [RLAIF] Gemini=$(round(gemini_score,digits=3)) MNS=$(round(mns_local,digits=3)) Raegis=$(round(effective_raegis,digits=3)) Guardian=$(round(guardian_penalty,digits=3)) → Reward=$(round(combined_reward,digits=3))"
+                @info "   [RLAIF] Teacher=$(round(mns_score,digits=3)) MNS=$(round(mns_local,digits=3)) Raegis=$(round(effective_raegis,digits=3)) Guardian=$(round(guardian_penalty,digits=3)) → Reward=$(round(combined_reward,digits=3))"
 
-                # Aplica passo de reforço em amostra aleatória do dataset
                 rl_idx  = rand(1:length(dataset))
                 rl_loss, opt_state_rl, model = train_on_reward!(
                     model, md, opt_state_rl, dataset[rl_idx], combined_reward
                 )
                 @printf("   [RLAIF] Loss RLAIF: %.4f\n", rl_loss)
             else
-                @info "   [RLAIF] Reward combinado zerado ou nulo — sem atualização RLAIF neste epoch."
-            end
-        end
-
-        # ── Geração iterativa e escrita no mmap (buffer 200-600) ──
-        if mm !== nothing
-            try
-                id2char = Dict(v => k for (k, v) in char2id)
-                gen_ids = generate(model, md, SEQ_LEN; num_steps=10, temperature=0.8f0, valid_ids=valid_ids)
-                decoded = join([get(id2char, id, "") for id in gen_ids if id != md.mask_token_id && id > 4])
-                decoded_bytes = Vector{UInt8}(codeunits(decoded)[1:min(end, 399)])
-                mm[201:200+length(decoded_bytes)] .= decoded_bytes
-                mm[201+length(decoded_bytes):600] .= 0x00
-            catch
-                # Não quebra o treino se a geração falhar
+                @info "   [RLAIF] Reward zerado ou nulo — sem atualização RLAIF neste epoch."
             end
         end
 
