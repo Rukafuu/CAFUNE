@@ -13,10 +13,24 @@ if hasattr(sys.stderr, 'reconfigure'):
 
 def gemini_teacher_loop():
     mem_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "cafune_brain.mem"))
+
+    # Pré-carrega modelos Flair antes de abrir o mmap (pode demorar na 1ª vez)
+    print("\n=== [PROFESSOR RLAIF — MNS v2 com Flair] ===")
+    print("Carregando modelos linguísticos...")
+    try:
+        import sys as _sys
+        _sys.path.insert(0, os.path.dirname(__file__))
+        from mns_flair import compute_mns_flair, _load_models
+        _load_models()  # dispara download/cache dos modelos Flair
+        use_flair = True
+        print("[OK] Flair pronto — sentiment + POS multilingual")
+    except Exception as e:
+        use_flair = False
+        print(f"[WARN] Flair indisponível ({e}) — usando mns_local")
+
     with open(mem_file, "r+b") as f:
         mm = mmap.mmap(f.fileno(), 1024)
-        print("\n=== [PROFESSOR RLAIF — MNS LOCAL (sem API)] ===")
-        print("Avaliando outputs do CAFUNE com MNS local...")
+        print("Avaliando outputs do CAFUNE...\n")
 
         # Offsets:
         #   20-27 → timestamp de geração (float64)
@@ -41,13 +55,17 @@ def gemini_teacher_loop():
                     print(f"\n[TEXTO DO ALUNO]: \"{output[:80]}\"")
 
                     try:
-                        from mns_local import compute_mns
-                        score, d_f, d_t = compute_mns(prompt_text_raw, output)
-                        reason = f"D_f={d_f:.3f} D_t={d_t:.3f}"
-                        print(f" [local] MNS={score:.3f} | {reason}")
+                        if use_flair:
+                            from mns_flair import compute_mns_flair
+                            score, d_sent, d_gram, d_cov = compute_mns_flair(prompt_text_raw, output)
+                            print(f" [Flair] MNS={score:.3f} | sent={d_sent:.3f} gram={d_gram:.3f} cov={d_cov:.3f}")
+                        else:
+                            from mns_local import compute_mns
+                            score, d_f, d_t = compute_mns(prompt_text_raw, output)
+                            print(f" [local] MNS={score:.3f} | D_f={d_f:.3f} D_t={d_t:.3f}")
 
                         score_clamped = max(0.0, min(1.0, score))
-                        mm[MNS_OFFSET:MNS_OFFSET+4]       = struct.pack('f', float(score_clamped))
+                        mm[MNS_OFFSET:MNS_OFFSET+4]           = struct.pack('f', float(score_clamped))
                         mm[MNS_LOCAL_OFFSET:MNS_LOCAL_OFFSET+4] = struct.pack('f', float(score_clamped))
 
                         last_seen_ts = current_ts
