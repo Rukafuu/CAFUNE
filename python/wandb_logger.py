@@ -98,6 +98,20 @@ def tail_jsonl(path: str, last_line: int) -> tuple[list[dict], int]:
 def run_logger():
     import wandb
 
+    # Carrega API key do .env
+    try:
+        from dotenv import load_dotenv
+        dotenv_path = os.path.normpath(os.path.join(SCRIPT_DIR, "..", ".env"))
+        load_dotenv(dotenv_path, override=True)
+    except ImportError:
+        pass
+
+    api_key = os.getenv("WANDB_API_KEY")
+    if api_key:
+        wandb.login(key=api_key)
+    else:
+        logger.warning("[wandb] WANDB_API_KEY não encontrada no .env — tentando login salvo")
+
     # Inicializa run wandb
     run = wandb.init(
         project="cafune",
