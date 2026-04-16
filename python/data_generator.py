@@ -186,6 +186,22 @@ PAIR_TEMPLATES = {
 }
 
 
+def generate_pair_local(topic: str) -> dict | None:
+    """Gera um par conversacional a partir dos templates locais."""
+    templates = PAIR_TEMPLATES.get(topic)
+    if not templates:
+        return None
+    prompt_text, target_text = random.choice(templates)
+    return {
+        "prompt":   prompt_text,
+        "target":   target_text,
+        "intent":   get_intent(topic),
+        "topic":    topic,
+        "grounded": False,
+        "source":   "local-template",
+    }
+
+
 def generate_pair_llm(topic: str) -> dict | None:
     """
     Gera um par conversacional usando BitNet 1-bit se disponível,
