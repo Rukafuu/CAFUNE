@@ -24,38 +24,23 @@ import mmap
 import struct
 import time
 import logging
-import pandas as pd
 
-# Injeta o path do Raegis para encontrar Guardian
-RAEGIS_PATH = os.getenv("RAEGIS_PATH")
-if RAEGIS_PATH:
-    sys.path.insert(0, os.path.normpath(RAEGIS_PATH))
-else:
-    # Tenta path padrão relativo ao projeto
-    _default = os.path.normpath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "..", "Raegis", "python")
-    )
-    if os.path.isdir(_default):
-        sys.path.insert(0, _default)
-
-try:
-    from raegis.core.guardian import Guardian
-    GUARDIAN_AVAILABLE = True
-except ImportError:
-    GUARDIAN_AVAILABLE = False
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 logger = logging.getLogger(__name__)
 
-MEM_FILE         = os.path.normpath(os.path.join(os.path.dirname(__file__), "cafune_brain.mem"))
-HISTORY_FILE     = os.path.normpath(os.path.join(os.path.dirname(__file__), "neural_history.jsonl"))
-GUARDIAN_OFFSET  = 52   # float32 — anomaly penalty escrita aqui
-MIN_HISTORY_ROWS = 10   # mínimo de entradas para treinar o Guardian
+# Caminhos corretos — raiz do projeto
+MEM_FILE        = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "cafune_brain.mem"))
+HISTORY_FILE    = os.path.normpath(os.path.join(os.path.dirname(__file__), "neural_history.jsonl"))
+GUARDIAN_OFFSET = 52   # float32 — anomaly penalty
+MIN_HISTORY     = 10   # mínimo para treinar
 
 
-def load_history() -> pd.DataFrame:
-    """Carrega neural_history.jsonl como DataFrame."""
+def load_history() -> list[dict]:
+    """Carrega neural_history.jsonl como lista de dicts."""
     if not os.path.exists(HISTORY_FILE):
-        return pd.DataFrame()
+        return []
     rows = []
     with open(HISTORY_FILE, "r", encoding="utf-8") as f:
         for line in f:
@@ -65,88 +50,86 @@ def load_history() -> pd.DataFrame:
                     rows.append(json.loads(line))
                 except json.JSONDecodeError:
                     continue
-    return pd.DataFrame(rows) if rows else pd.DataFrame()
+    return rows
 
 
-def train_guardian(df: pd.DataFrame):
+class LocalGuardian:
     """
-    Treina o Guardian com respostas não-flagadas (baseline normal).
-    Retorna Guardian treinado ou None se dados insuficientes.
+    Detector de anomalias local usando IsolationForest + TF-IDF.
+    Substitui raegis.core.guardian sem dependência externa.
     """
-    if not GUARDIAN_AVAILABLE:
-        logger.warning("[Guardian] módulo Raegis não disponível.")
-        return None
 
-    df_normal = df[df.get("flagged", pd.Series([False] * len(df))) == False]
-    if len(df_normal) < MIN_HISTORY_ROWS:
-        logger.info("[Guardian] Histórico insuficiente (%d/%d entradas normais).",
-                    len(df_normal), MIN_HISTORY_ROWS)
-        return None
+    def __init__(self):
+        from sklearn.ensemble import IsolationForest
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        self.vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 4), max_features=500)
+        self.model      = IsolationForest(contamination=0.1, random_state=42)
+        self.fitted     = False
 
-    try:
-        guardian = Guardian()
-        guardian.fit(df_normal[["response"]], verbose=0)
-        logger.info("[Guardian] Treinado com %d entradas normais (backend: %s).",
-                    len(df_normal), guardian.backend)
-        return guardian
-    except Exception as e:
-        logger.error("[Guardian] Falha no treino: %s", e)
-        return None
+    def fit(self, texts: list[str]):
+        if len(texts) < MIN_HISTORY:
+            return
+        X = self.vectorizer.fit_transform(texts)
+        self.model.fit(X)
+        self.fitted = True
 
-
-def anomaly_penalty(guardian, response: str) -> float:
-    """
-    Calcula penalidade de anomalia para uma resposta.
-    Retorna valor ∈ [0.0, 0.5] — não ultrapassa 0.5 para não dominar o reward.
-    """
-    if guardian is None or not response.strip():
-        return 0.0
-    try:
-        df_pred = pd.DataFrame({"response": [response]})
-        result  = guardian.predict(df_pred)
-        is_anomaly   = bool(result["is_anomaly"].iloc[0])
-        anomaly_score = float(result["anomaly_score"].iloc[0])
-        # Normaliza para [0, 0.5]
-        penalty = min(anomaly_score / (anomaly_score + 1.0), 0.5) if is_anomaly else 0.0
+    def anomaly_score(self, text: str) -> float:
+        """Retorna penalidade ∈ [0.0, 0.5]. 0 se normal."""
+        if not self.fitted or not text.strip():
+            return 0.0
+        X = self.vectorizer.transform([text])
+        # score_samples: mais negativo = mais anômalo
+        raw = self.model.score_samples(X)[0]
+        is_anomaly = self.model.predict(X)[0] == -1
+        if not is_anomaly:
+            return 0.0
+        # Normaliza raw score para [0, 0.5]
+        penalty = min(abs(raw) / (abs(raw) + 1.0), 0.5)
         return round(penalty, 4)
-    except Exception as e:
-        logger.error("[Guardian] Falha na predição: %s", e)
-        return 0.0
 
 
 def guardian_loop():
-    """Loop contínuo: re-treina Guardian a cada N ciclos e escreve penalty no mmap."""
     if not os.path.exists(MEM_FILE):
-        logger.error("[Guardian] cafune_brain.mem não encontrado.")
+        logger.error("[Guardian] cafune_brain.mem nao encontrado em: %s", MEM_FILE)
         return
 
-    logger.info("=== [GUARDIAN RAEGIS: DETECTOR DE ANOMALIAS ONLINE] ===")
+    logger.info("=== [GUARDIAN: DETECTOR DE ANOMALIAS — IsolationForest local] ===")
 
-    guardian     = None
-    retrain_every = 20   # re-treina a cada 20 avaliações
-    eval_count   = 0
+    guardian      = LocalGuardian()
+    retrain_every = 20
+    eval_count    = 0
+    last_seen_ts  = 0.0
 
     with open(MEM_FILE, "r+b") as f:
-        mm = mmap.mmap(f.fileno(), 1024)
+        mm = mmap.mmap(f.fileno(), 2048)
         try:
             while True:
-                # Re-treinar periodicamente
+                # Re-treinar periodicamente com histórico do Raegis
                 if eval_count % retrain_every == 0:
-                    df = load_history()
-                    guardian = train_guardian(df)
+                    history = load_history()
+                    normal_texts = [
+                        h["response"] for h in history
+                        if not h.get("flagged", False) and h.get("response", "").strip()
+                    ]
+                    if len(normal_texts) >= MIN_HISTORY:
+                        guardian.fit(normal_texts)
+                        logger.info("[Guardian] Treinado com %d respostas normais.", len(normal_texts))
+                    else:
+                        logger.info("[Guardian] Historico insuficiente (%d/%d) — aguardando...",
+                                    len(normal_texts), MIN_HISTORY)
 
-                response_raw = mm[200:599].split(b'\x00')[0]
-                response     = response_raw.decode("utf-8", errors="ignore")
+                # Detecta novo output via timestamp (não conflita com handshake mm[0])
+                current_ts = struct.unpack('d', mm[20:28])[0]
+                response   = mm[200:600].split(b'\x00')[0].decode("utf-8", errors="ignore")
 
-                if response.strip() and mm[0] == 0:
-                    penalty = anomaly_penalty(guardian, response)
+                if response.strip() and current_ts != last_seen_ts:
+                    last_seen_ts = current_ts
+                    penalty = guardian.anomaly_score(response)
                     mm[GUARDIAN_OFFSET:GUARDIAN_OFFSET+4] = struct.pack('f', penalty)
 
                     if penalty > 0.0:
-                        logger.info("[Guardian] ANOMALIA detectada | penalty=%.3f | \"%s\"",
+                        logger.info("[Guardian] ANOMALIA | penalty=%.3f | \"%s\"",
                                     penalty, response[:60])
-                    else:
-                        mm[GUARDIAN_OFFSET:GUARDIAN_OFFSET+4] = struct.pack('f', 0.0)
 
                     eval_count += 1
 

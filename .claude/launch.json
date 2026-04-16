@@ -17,9 +17,13 @@
     {
       "name": "Gemini Teacher (RLAIF reward)",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["python/gemini_teacher.py"],
+      "runtimeArgs": ["-u", "python/gemini_teacher.py"],
       "port": 3002,
-      "autoPort": true
+      "autoPort": true,
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONIOENCODING": "utf-8"
+      }
     },
     {
       "name": "Raegis Sentinel (Auditoria ética)",

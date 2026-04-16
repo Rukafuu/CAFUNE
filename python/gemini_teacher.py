@@ -1,153 +1,193 @@
+"""
+gemini_teacher.py — Professor RLAIF do CAFUNE
+
+Avalia outputs do CAFUNE usando dois sistemas complementares:
+
+  BitNet (60%): avaliação semântica e de coerência via LLM 1-bit local
+                retorna mns + suggestion + reason em JSON
+                requer llama-server.exe rodando na porta 8080
+
+  Flair  (40%): análise linguística estrutural via modelos NLP
+                sentiment (tom empático) + POS grammar + keyword coverage
+
+Score final = 0.6 * bitnet_score + 0.4 * flair_score
+Fallback automático: se BitNet offline → 100% Flair; se Flair falhar → mns_local
+"""
+
 import mmap
 import time
 import os
 import struct
 import sys
-import io
-from dotenv import load_dotenv
-from tokenizer import BPETokenizer
+import json
+import logging
 
-# Força stdout UTF-8 no Windows
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+logger = logging.getLogger(__name__)
 
-# Carregar variáveis de ambiente — tenta ../../.env e depois ../.env
-dotenv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
-if not os.path.exists(dotenv_path):
-    dotenv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".env"))
-load_dotenv(dotenv_path)
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-# Configurar API Gemini — usa google.genai (novo SDK)
-api_key = os.getenv("GEMINI_API_KEY")
-_client = None
-_types  = None
-_legacy_model = None
+# Pesos da combinação final
+W_BITNET = 0.6
+W_FLAIR  = 0.4
 
-if api_key:
+
+def _init_flair():
+    """Carrega modelos Flair. Retorna True se ao menos sentiment carregou."""
     try:
-        from google import genai as google_genai
-        from google.genai import types as google_types
-        _client = google_genai.Client(api_key=api_key)
-        _types  = google_types
-        print("[OK] Gemini SDK (google.genai) com web grounding pronto.")
-    except ImportError:
-        import google.generativeai as genai_legacy
-        genai_legacy.configure(api_key=api_key)
-        _legacy_model = genai_legacy.GenerativeModel('gemini-1.5-flash')
-        print("[OK] Gemini SDK legado (google.generativeai) configurado.")
-else:
-    print("[WARN] GEMINI_API_KEY nao encontrada. Usando MNS local como fallback.")
+        sys.path.insert(0, os.path.dirname(__file__))
+        from mns_flair import _load_models
+        return _load_models()
+    except Exception as e:
+        logger.warning("[Flair] Indisponível: %s", e)
+        return False
 
 
-def call_gemini(prompt_text: str, use_grounding: bool = True) -> str:
-    """Chama Gemini com ou sem web grounding. Retorna texto da resposta."""
-    if _client and _types:
-        config_kwargs = {"temperature": 0.2}
-        if use_grounding:
-            config_kwargs["tools"] = [_types.Tool(google_search=_types.GoogleSearch())]
-        config = _types.GenerateContentConfig(**config_kwargs)
-        resp = _client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt_text,
-            config=config,
-        )
-        return resp.text
-    elif _legacy_model:
-        resp = _legacy_model.generate_content(prompt_text)
-        return resp.text
-    return ""
+def _score_bitnet(prompt: str, output: str) -> tuple[float, str, str]:
+    """
+    Avalia output com BitNet Teacher.
+    Retorna (score, suggestion, reason) ou (None, '', '') se offline.
+    """
+    from bitnet_client import is_server_alive, generate_content
+    if not is_server_alive():
+        return None, "", ""
+
+    prompt_eval = f"""Mentor do CAFUNE.
+Prompt: "{prompt}"
+Resposta atual: "{output}"
+Forneça Sugestão (Gabarito) e Razão em JSON. Score 0-1 (MNS).
+{{ "mns": float, "suggestion": "string", "reason": "string" }}
+REPORTE APENAS O JSON."""
+
+    resp = generate_content(
+        prompt_eval,
+        system_instruction="Você é um professor avaliador rigoroso. Retorne SOMENTE JSON válido.",
+        as_json=True,
+        temperature=0.3,
+    )
+    if not resp:
+        return None, "", ""
+
+    try:
+        resp = resp.replace("```json", "").replace("```", "").strip()
+        data = json.loads(resp)
+        return float(data.get("mns", 0.5)), str(data.get("suggestion", "")), str(data.get("reason", ""))
+    except Exception as e:
+        logger.error("[BitNet] Parse error: %s | resp: %s", e, resp[:100])
+        return None, "", ""
+
+
+def _score_flair(prompt: str, output: str) -> float:
+    """Avalia output com Flair. Retorna score ou None se indisponível."""
+    try:
+        from mns_flair import compute_mns_flair
+        score, d_sent, d_gram, d_cov = compute_mns_flair(prompt, output)
+        logger.info(" [Flair] MNS=%.3f | sent=%.3f gram=%.3f cov=%.3f", score, d_sent, d_gram, d_cov)
+        return score
+    except Exception as e:
+        logger.warning("[Flair] Erro: %s — fallback mns_local", e)
+        try:
+            from mns_local import compute_mns
+            score, d_f, d_t = compute_mns(prompt, output)
+            logger.info(" [local] MNS=%.3f | D_f=%.3f D_t=%.3f", score, d_f, d_t)
+            return score
+        except Exception:
+            return 0.5
+
 
 def gemini_teacher_loop():
-    tokenizer = BPETokenizer()
-    vocab_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "vocab.json"))
-    if os.path.exists(vocab_path):
-        tokenizer.load(vocab_path)
+    mem_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "cafune_brain.mem"))
 
-    mem_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "cafune_brain.mem"))
+    print("\n=== [PROFESSOR RLAIF — BitNet + Flair] ===")
+    print("Carregando modelos Flair...")
+    use_flair = _init_flair()
+    if use_flair:
+        print("[OK] Flair pronto — sentiment + POS multilingual")
+    else:
+        print("[WARN] Flair offline — usando mns_local como fallback")
+
+    print("Verificando BitNet server (127.0.0.1:8080)...")
+    from bitnet_client import is_server_alive
+    if is_server_alive():
+        print("[OK] BitNet server ativo")
+    else:
+        print("[INFO] BitNet offline — será usado se subir durante o treino")
+
     with open(mem_file, "r+b") as f:
-        mm = mmap.mmap(f.fileno(), 1024)
-        print("\n=== [MESTRIADO GEMINI: PROFESSOR RLAIF ATIVO (PRO)] ===")
-        print("Ensinando o CAFUNE a ser um assistente natural, empático e amigável...")
+        mm = mmap.mmap(f.fileno(), 2048)
+        print("\nAguardando handshake do Julia (0x03)...\n")
 
-        # Offsets (0-based):
-        #   20-27 → timestamp de geração (float64)
-        #   40-43 → Gemini MNS score     (float32)  ← este processo escreve aqui
-        #   44-47 → MNS local score      (float32)  ← também escrito aqui como fallback
-        GEMINI_OFFSET    = 40
-        MNS_LOCAL_OFFSET = 44
-        TS_OFFSET        = 20
-
-        last_seen_ts = 0.0
+        # Layout de offsets (0-based):
+        #   0        → handshake: 0x03=novo output, 0x04=avaliação pronta
+        #   40-43    → MNS score principal (float32)
+        #   44-47    → MNS score secundário (float32)
+        #   200-599  → output gerado pelo CAFUNE
+        #   600-999  → contexto/prompt do epoch
+        #   1001-1399→ suggestion do BitNet (utf-8)
+        #   1401-1799→ reason do BitNet (utf-8)
+        MNS_OFFSET  = 40
+        MNS2_OFFSET = 44
+        SUG_OFFSET  = 1001
+        REA_OFFSET  = 1401
 
         try:
             while True:
-                # Verificar se houve nova geração via timestamp
-                ts_bytes = mm[TS_OFFSET:TS_OFFSET+8]
-                current_ts = struct.unpack('d', ts_bytes)[0]
+                if mm[0] != 0x03:
+                    time.sleep(0.5)
+                    continue
 
-                response_data = mm[200:599].split(b'\x00')[0]
-                output = response_data.decode("utf-8", errors="ignore")
+                output     = mm[200:600].split(b'\x00')[0].decode("utf-8", errors="ignore")
+                prompt_ctx = mm[600:1000].split(b'\x00')[0].decode("utf-8", errors="ignore")
 
-                # Só avaliar se: texto presente, engine idle, e timestamp mudou
-                if len(output.strip()) > 2 and mm[0] == 0 and current_ts != last_seen_ts:
-                    prompt_text_raw = mm[600:1000].split(b'\x00')[0].decode("utf-8", errors="ignore")
-                    print(f"\n[TEXTO DO ALUNO]: \"{output[:80]}\"")
-                    print("Solicitando avaliacao ao Gemini (web grounding ativo)...")
+                if not output.strip():
+                    mm[0] = 0x04
+                    continue
 
-                    # Prompt de avaliação MNS com contexto web
-                    eval_prompt = f"""Você é um mentor de uma IA chamada CAFUNE. Use a web para verificar se a resposta abaixo é factualmente correta e empática.
+                print(f"\n[TEXTO DO ALUNO]: \"{output[:80]}\"")
 
-Prompt original do usuario: "{prompt_text_raw}"
-Resposta do CAFUNE: "{output}"
+                try:
+                    # ── BitNet ────────────────────────────────────────────────
+                    bitnet_score, suggestion, reason = _score_bitnet(prompt_ctx, output)
+                    if bitnet_score is not None:
+                        print(f" [BitNet] MNS={bitnet_score:.3f} | {reason[:60]}")
+                    else:
+                        print(" [BitNet] Offline — usando só Flair")
 
-CALCULE DOIS SCORES (0.0 a 1.0):
-1. Df: Espelhamento de Forma — a resposta tem tom empático e natural?
-2. Dt: Espelhamento de Intencao — a resposta captura o que o usuario realmente quer?
+                    # ── Flair ─────────────────────────────────────────────────
+                    flair_score = _score_flair(prompt_ctx, output) if use_flair else 0.5
 
-Se a resposta contiver informacao factualmente ERRADA (verificada via web), penalize Dt em -0.3.
+                    # ── Combinação ────────────────────────────────────────────
+                    if bitnet_score is not None:
+                        final = W_BITNET * bitnet_score + W_FLAIR * flair_score
+                        print(f" [FINAL] {W_BITNET}*{bitnet_score:.3f} + {W_FLAIR}*{flair_score:.3f} = {final:.3f}")
+                    else:
+                        final = flair_score
+                        print(f" [FINAL] Flair-only = {final:.3f}")
 
-Responda APENAS neste formato:
-Df: 0.X
-Dt: 0.X
-MNS: 0.X
-Razao: uma linha explicando"""
+                    final = max(0.0, min(1.0, final))
+                    mm[MNS_OFFSET:MNS_OFFSET+4]   = struct.pack('f', float(final))
+                    mm[MNS2_OFFSET:MNS2_OFFSET+4] = struct.pack('f', float(flair_score))
 
-                    try:
-                        import re
-                        if _client or _legacy_model:
-                            # Usa grounding se texto tiver mais de 15 chars (vale a pena buscar)
-                            use_grounding = len(output.strip()) > 15
-                            resp_text = call_gemini(eval_prompt, use_grounding=use_grounding)
-                            mns_match = re.search(r"MNS:\s*(\d+\.\d+|\d+)", resp_text)
-                            score = float(mns_match.group(1)) if mns_match else 0.5
-                            reason_match = re.search(r"Razao:\s*(.+)", resp_text)
-                            reason = reason_match.group(1).strip() if reason_match else resp_text.split('\n')[-1]
-                            grounded_tag = "[WEB]" if use_grounding else "[local]"
-                            print(f" {grounded_tag} MNS={score:.3f} | {reason}")
-                        else:
-                            # Fallback MNS local sem API
-                            from mns_local import compute_mns
-                            score, d_f, d_t = compute_mns(prompt_text_raw, output)
-                            reason = f"MNS local D_f={d_f:.3f} D_t={d_t:.3f} (API offline)"
-                            print(f" [offline] MNS={score:.3f} | {reason}")
+                    # Escreve suggestion e reason no mmap
+                    if suggestion:
+                        enc = suggestion.encode("utf-8")[:398]
+                        mm[SUG_OFFSET:SUG_OFFSET+len(enc)] = enc
+                        mm[SUG_OFFSET+len(enc)]            = 0x00
+                    if reason:
+                        enc = reason.encode("utf-8")[:398]
+                        mm[REA_OFFSET:REA_OFFSET+len(enc)] = enc
+                        mm[REA_OFFSET+len(enc)]            = 0x00
 
-                        # Escrever Gemini score (com grounding) em offset 40
-                        score_clamped = max(0.0, min(1.0, score))
-                        mm[GEMINI_OFFSET:GEMINI_OFFSET+4] = struct.pack('f', float(score_clamped))
+                except Exception as e:
+                    logger.error("Erro na avaliação: %s", e)
 
-                        # Escrever MNS local em offset 44 (sempre disponível como fallback)
-                        from mns_local import compute_mns
-                        _, d_f, d_t = compute_mns(prompt_text_raw, output)
-                        mns_val = (d_f + d_t) / 2.0
-                        mm[MNS_LOCAL_OFFSET:MNS_LOCAL_OFFSET+4] = struct.pack('f', float(mns_val))
+                finally:
+                    mm[0] = 0x04
+                    print(" [v] Handshake 0x04 → Julia liberado")
 
-                        last_seen_ts = current_ts
-
-                    except Exception as e:
-                        print(f" Erro na avaliação: {e}")
-
-                time.sleep(5)
-
-                    
         except KeyboardInterrupt:
             print("\n Mentoria encerrada.")
         finally:

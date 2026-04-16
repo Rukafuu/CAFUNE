@@ -3,36 +3,15 @@ import time
 import os
 import struct
 import sys
-import io
-from dotenv import load_dotenv
 
-# Força stdout UTF-8 no Windows (evita UnicodeEncodeError com emojis)
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+# Força stdout UTF-8 no Windows
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-# Carregar variáveis de ambiente — tenta ../../.env e depois o diretório do script
-dotenv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
-if not os.path.exists(dotenv_path):
-    dotenv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".env"))
-load_dotenv(dotenv_path)
-
-if os.getenv("GEMINI_API_KEY"):
-    print("[OK] GEMINI_API_KEY detectada com sucesso.")
-else:
-    print("[WARN] GEMINI_API_KEY nao encontrada no .env.")
-
-# Injetar o Raegis NATIVO no Path (configure RAEGIS_PATH no .env ou como variável de ambiente)
-RAEGIS_PATH = os.getenv("RAEGIS_PATH")
-if RAEGIS_PATH:
-    RAEGIS_PATH = os.path.normpath(RAEGIS_PATH)
-    if RAEGIS_PATH not in sys.path:
-        sys.path.insert(0, RAEGIS_PATH)
-
-try:
-    from raegis.core.doctor import RaegisDoctor
-    RAEGIS_DOCTOR_AVAILABLE = True
-except ImportError:
-    RAEGIS_DOCTOR_AVAILABLE = False
-    print("⚠️ [Sentinela] Core do Raegis não encontrado no Path. Usando modo heurístico.")
+# RaegisDoctor desativado — análise local sem API
+RAEGIS_DOCTOR_AVAILABLE = False
 
 try:
     from tokenizer import CharTokenizer as BPETokenizer
@@ -47,13 +26,7 @@ class RaegisSentinel:
         if os.path.exists(vocab_path):
             self.tokenizer.load(vocab_path)
         
-        self.doctor = None
-        if RAEGIS_DOCTOR_AVAILABLE:
-            try:
-                self.doctor = RaegisDoctor(model_id="gemini-1.5-flash") # Flash é mais rápido para auditoria contínua
-                print("🩺 [Raegis] Truth Anchor (Doctor) Vinculado.")
-            except Exception as e:
-                print(f"⚠️ [Raegis] Falha ao iniciar Doctor: {e}")
+        self.doctor = None  # RaegisDoctor offline — modo heurístico local
         
     def audit_ethics(self, text, reward_in, prompt_original=""):
         # 1. Filtro de Sicofancia e Adulação Aprofundado
@@ -96,37 +69,46 @@ class RaegisSentinel:
 
 def sentinel_loop():
     sentinel = RaegisSentinel()
-    mem_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "cafune_brain.mem"))
-    
+    # Caminho correto: raiz do projeto (um nível acima de python/)
+    mem_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "cafune_brain.mem"))
+
     if not os.path.exists(mem_file):
-        print(f"[ERROR] Memoria nao encontrada. O Engine esta ligado?")
+        print(f"[ERROR] cafune_brain.mem nao encontrado em: {mem_file}")
         return
 
     with open(mem_file, "r+b") as f:
-        mm = mmap.mmap(f.fileno(), 1024)
-        print("\n=== [SENTINELA RAEGIS: AUDITORIA ÉTICA ONLINE] ===")
-        print("Monitorando taxa de adulação e integridade neural...")
+        mm = mmap.mmap(f.fileno(), 2048)
+        print("\n=== [SENTINELA RAEGIS: AUDITORIA ETICA ONLINE] ===")
+        print("Monitorando sycophancy e integridade do output...")
+        print("Modo: heuristico local (sem API)\n")
 
         # Offsets (0-based):
-        #   40-43 → Gemini MNS score  (leitura)
-        #   48-51 → Raegis penalty    (escrita — não sobrescreve o score do Gemini)
-        #   60    → Ethics flag       (escrita)
-        GEMINI_OFFSET  = 40
-        PENALTY_OFFSET = 48
+        #   20-27 → timestamp de geração (float64)  ← usado para detectar novo output
+        #   40-43 → MNS score principal  (leitura)
+        #   48-51 → Raegis penalty       (escrita)
+        #   60    → Ethics flag          (escrita: 0x01=flagged)
+        MNS_OFFSET         = 40
+        PENALTY_OFFSET     = 48
         ETHICS_FLAG_OFFSET = 60
+        TS_OFFSET          = 20
+
+        last_seen_ts = 0.0
 
         try:
             while True:
-                # Ler score atual do Gemini (referência para calcular penalidade)
-                current_reward = struct.unpack('f', mm[GEMINI_OFFSET:GEMINI_OFFSET+4])[0]
+                # Detecta novo output via timestamp (não interfere no handshake mm[0])
+                current_ts = struct.unpack('d', mm[TS_OFFSET:TS_OFFSET+8])[0]
 
-                response_data = mm[200:599].split(b'\x00')[0]
+                response_data = mm[200:600].split(b'\x00')[0]
                 output = response_data.decode("utf-8", errors="ignore")
 
                 prompt_data = mm[600:1000].split(b'\x00')[0]
                 prompt_text = prompt_data.decode("utf-8", errors="ignore")
 
-                if output.strip() and mm[0] == 0:
+                current_reward = struct.unpack('f', mm[MNS_OFFSET:MNS_OFFSET+4])[0]
+
+                if output.strip() and current_ts != last_seen_ts:
+                    last_seen_ts = current_ts
                     _, flagged = sentinel.audit_ethics(output, current_reward, prompt_original=prompt_text)
 
                     if flagged:
@@ -155,7 +137,7 @@ def sentinel_loop():
                     with open(history_file, "a", encoding="utf-8") as hf:
                         hf.write(json.dumps(log_entry) + "\n")
 
-                time.sleep(1.5)
+                time.sleep(2.0)
 
         except KeyboardInterrupt:
             print("\n Sentinela Raegis Offline.")
