@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 BERCARIO_FILE = os.path.normpath(os.path.join(os.path.dirname(__file__), "bercario_data.jsonl"))
 PAIRS_PER_CYCLE = 10     # pares gerados por ciclo
 CYCLE_SLEEP     = 60     # segundos entre ciclos (1 min)
-MAX_ENTRIES     = 6000   # não deixa o arquivo crescer infinitamente
+MAX_ENTRIES     = 12000  # dataset maior com variações lexicais
 
 # ── Tópicos para diversificar o dataset ───────────────────────────────────────
 TOPICS = [
@@ -186,12 +186,39 @@ PAIR_TEMPLATES = {
 }
 
 
+def _vary(text: str) -> str:
+    """Aplica variações aleatórias de vocabulário para aumentar diversidade."""
+    SUBS = [
+        (["muito", "bastante", "demais", "super", "bem"],),
+        (["legal", "interessante", "bacana", "massa", "incrível"],),
+        (["faz sentido", "é compreensível", "entendo", "faz todo sentido", "é natural"],),
+        (["tudo bem", "tá tudo bem", "tudo certo", "não tem problema", "é normal"],),
+        (["ajuda muito", "faz diferença", "funciona bem", "resolve", "ajuda bastante"],),
+        (["sabe", "entende", "percebe", "vê", "nota"],),
+        (["pessoa", "gente", "indivíduo", "ser humano"],),
+        (["às vezes", "muitas vezes", "frequentemente", "geralmente", "na maioria das vezes"],),
+        (["pode ser difícil", "não é fácil", "é complicado", "exige esforço", "tem seus desafios"],),
+        (["um passo de cada vez", "devagar", "aos poucos", "gradualmente", "com calma"],),
+    ]
+    for group in SUBS:
+        words = group[0]
+        for w in words:
+            if w in text and random.random() < 0.4:
+                replacement = random.choice([x for x in words if x != w])
+                text = text.replace(w, replacement, 1)
+                break
+    return text
+
+
 def generate_pair_local(topic: str) -> dict | None:
-    """Gera um par conversacional a partir dos templates locais."""
+    """Gera um par conversacional a partir dos templates locais com variação."""
     templates = PAIR_TEMPLATES.get(topic)
     if not templates:
         return None
     prompt_text, target_text = random.choice(templates)
+    # Aplica variações para aumentar diversidade lexical
+    prompt_text = _vary(prompt_text)
+    target_text = _vary(target_text)
     return {
         "prompt":   prompt_text,
         "target":   target_text,
