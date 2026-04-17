@@ -185,8 +185,8 @@ function start_training_session()
     N_LAYERS     = 6
     D_FF         = 1024
     EPOCHS       = 100
-    MAX_LR       = 5e-6   # refinamento fino — LR reduzido para sair do platô
-    WARMUP_RATIO = 0.0   # sem warmup — LR fixo para fine-tuning estável
+    MAX_LR       = 8e-6   # pico do cosine — sobe gradualmente via warmup
+    WARMUP_RATIO = 0.05  # 5% warmup linear + cosine decay até MAX_LR/10
 
     # ── 1. Vocabulário ──────────────────────────────────────────
     @info "1. Carregando vocabulário..."

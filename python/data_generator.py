@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 BERCARIO_FILE = os.path.normpath(os.path.join(os.path.dirname(__file__), "bercario_data.jsonl"))
 PAIRS_PER_CYCLE = 10     # pares gerados por ciclo
 CYCLE_SLEEP     = 60     # segundos entre ciclos (1 min)
-MAX_ENTRIES     = 3000   # não deixa o arquivo crescer infinitamente
+MAX_ENTRIES     = 6000   # não deixa o arquivo crescer infinitamente
 
 # ── Tópicos para diversificar o dataset ───────────────────────────────────────
 TOPICS = [
