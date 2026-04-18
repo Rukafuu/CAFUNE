@@ -294,7 +294,8 @@ function start_training_session()
 
     # ── 5. Loop de treino com checkpointing e RLAIF ────────────
     best_loss = Inf32
-    @info "5. Iniciando treino | epochs $(start_epoch+1)→$(start_epoch+EPOCHS)"
+    STEPS_PER_EPOCH = 500  # subsample por epoch — dataset completo visto em ~13 epochs
+    @info "5. Iniciando treino | epochs $(start_epoch+1)→$(start_epoch+EPOCHS) | $STEPS_PER_EPOCH steps/epoch"
 
     for epoch in 1:EPOCHS
         actual_epoch = start_epoch + epoch
@@ -302,8 +303,12 @@ function start_training_session()
         @info "── Epoch $actual_epoch/$(start_epoch + EPOCHS) ──────────────────────"
         flush(stdout)
 
+        # Subsample aleatório do dataset para manter epochs rápidas (~5 min)
+        n_steps    = min(STEPS_PER_EPOCH, length(dataset))
+        epoch_data = dataset[randperm(length(dataset))[1:n_steps]]
+
         # ── Treino supervisionado ──
-        model = train!(model, md, dataset;
+        model = train!(model, md, epoch_data;
                        epochs        = 1,
                        max_lr        = MAX_LR,
                        warmup_ratio  = WARMUP_RATIO)
