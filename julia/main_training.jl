@@ -19,8 +19,10 @@ include("src/training.jl")
 # ── Paths absolutos ───────────────────────────────────────────────
 const SCRIPT_DIR  = @__DIR__
 const MEM_FILE    = normpath(joinpath(SCRIPT_DIR, "..", "cafune_brain.mem"))
-const CORPUS_FILE = normpath(joinpath(SCRIPT_DIR, "..", "python", "social_data.json"))
-const VOCAB_FILE  = normpath(joinpath(SCRIPT_DIR, "..", "vocab.json"))
+const CORPUS_FILE   = normpath(joinpath(SCRIPT_DIR, "..", "python", "social_data.json"))
+const VOCAB_FILE    = normpath(joinpath(SCRIPT_DIR, "..", "vocab.json"))
+const SPM_CONFIG    = normpath(joinpath(SCRIPT_DIR, "..", "python", "spm_config.json"))
+const SPM_TOKENS    = normpath(joinpath(SCRIPT_DIR, "..", "python", "dataset_tokens.json"))
 const CKPT_DIR    = joinpath(SCRIPT_DIR, "checkpoints")
 const BEST_CKPT   = joinpath(CKPT_DIR, "cafune_best.bson")
 const TRAIN_LOG   = joinpath(SCRIPT_DIR, "training_log.jsonl")
@@ -188,38 +190,70 @@ function start_training_session()
     MAX_LR       = 8e-6   # pico do cosine — sobe gradualmente via warmup
     WARMUP_RATIO = 0.05  # 5% warmup linear + cosine decay até MAX_LR/10
 
-    # ── 1. Vocabulário ──────────────────────────────────────────
-    @info "1. Carregando vocabulário..."
-    if !isfile(VOCAB_FILE)
-        @error "vocab.json não encontrado: $VOCAB_FILE"
-        return
+    # ── 1. Vocabulário (SentencePiece) ──────────────────────────
+    @info "1. Carregando config SentencePiece..."
+    use_spm = isfile(SPM_CONFIG) && isfile(SPM_TOKENS)
+    if use_spm
+        spm_cfg    = JSON.parsefile(SPM_CONFIG)
+        vocab_size = Int(spm_cfg["vocab_size"])
+        mask_id    = Int(spm_cfg["mask_id"])
+        pad_id     = Int(spm_cfg["pad_id"])
+        @info "   SPM vocab_size=$vocab_size | mask_id=$mask_id"
+        # Todos os IDs são válidos para geração (SPM não tem tokens lixo)
+        # Exclui apenas PAD(0), UNK(1), BOS(2), EOS(3), MASK(4)
+        valid_ids = collect(5:vocab_size-1)
+        @info "   $(length(valid_ids)) tokens válidos para geração"
+        # id2char para decodificação do output — lê vocab_spm.json se existir
+        spm_vocab_file = normpath(joinpath(SCRIPT_DIR, "..", "python", "vocab_spm.json"))
+        if isfile(spm_vocab_file)
+            spm_vocab = JSON.parsefile(spm_vocab_file)
+            id2char   = Dict{Int,String}(Int(v) => string(k) for (k, v) in spm_vocab["char2id"])
+        else
+            id2char = Dict{Int,String}()
+        end
+    else
+        @warn "SPM não encontrado — usando vocab.json character-level"
+        if !isfile(VOCAB_FILE)
+            @error "vocab.json não encontrado: $VOCAB_FILE"
+            return
+        end
+        char2id, vocab_size = load_vocab(VOCAB_FILE)
+        id2char   = Dict(v => k for (k, v) in char2id)
+        valid_ids = [id for (id, tok) in id2char if 1 <= length(tok) <= 8]
+        sort!(valid_ids)
+        mask_id   = vocab_size  # char-level: mask é vocab_size
+        pad_id    = 0
+        @info "   char-level vocab_size=$vocab_size"
     end
-    char2id, vocab_size = load_vocab(VOCAB_FILE)
-    @info "   $vocab_size tokens carregados de $(basename(VOCAB_FILE))"
-
-    # Filtra tokens válidos para geração: exclui apenas tokens especiais e frases longas
-    # O novo vocab BPE (rebuild_vocab.py) tem tokens reais de len 1-11; frases completas
-    # aparecem apenas em len>8. Tokens como "para ", "você ", "mente " (len=5-6) são essenciais.
-    id2char     = Dict(v => k for (k, v) in char2id)
-    valid_ids   = [id for (id, tok) in id2char if 1 <= length(tok) <= 8]
-    sort!(valid_ids)
-    @info "   $(length(valid_ids)) tokens válidos para geração (comprimento 1-8 chars)"
 
     # ── 2. Dataset ──────────────────────────────────────────────
     @info "2. Carregando dataset..."
-    if !isfile(CORPUS_FILE)
-        @error "social_data.json não encontrado: $CORPUS_FILE"
-        return
+    if use_spm
+        @info "   Lendo dataset_tokens.json (pré-tokenizado com SPM)..."
+        raw_seqs  = JSON.parsefile(SPM_TOKENS)  # Vector of Vector{Int}
+        dataset   = [reshape(Int.(seq), SEQ_LEN, 1) for seq in raw_seqs]
+        @info "   Dataset SPM: $(length(dataset)) sequências únicas"
+    else
+        if !isfile(CORPUS_FILE)
+            @error "social_data.json não encontrado: $CORPUS_FILE"
+            return
+        end
+        dataset = load_dataset(CORPUS_FILE, char2id, SEQ_LEN)
     end
-    dataset = load_dataset(CORPUS_FILE, char2id, SEQ_LEN)
 
     # ── 3. Modelo — resume ou inicializa ────────────────────────
     @info "3. Inicializando modelo..."
     existing_model, _, start_epoch = try_resume()
 
-    # vocab_size + 1 para incluir o token [MASK] como ID extra
-    config = TransformerConfig(vocab_size + 1, SEQ_LEN, D_MODEL, N_HEADS, N_LAYERS, D_FF, 0.0f0)
-    md     = MaskDiffusion(vocab_size; num_steps=20)
+    # SPM: mask_id=4 está dentro do vocab. Config usa vocab_size direto.
+    # char-level: mask era vocab_size (fora do vocab), precisava de +1.
+    # SPM: mask_id=4 está dentro do vocab (vocab_size=1999 inclui tudo)
+    # char-level: mask era vocab_size (ID extra fora do vocab) → precisava +1
+    actual_vocab = use_spm ? vocab_size : vocab_size + 1
+    config = TransformerConfig(actual_vocab, SEQ_LEN, D_MODEL, N_HEADS, N_LAYERS, D_FF, 0.0f0)
+    # Para SPM passamos vocab_size-1 ao construtor para que internamente fique vocab_size
+    md_base_vocab = use_spm ? vocab_size - 1 : vocab_size
+    md     = MaskDiffusion(md_base_vocab; mask_token_id=mask_id, num_steps=20)
 
     if existing_model !== nothing
         model = existing_model
@@ -289,9 +323,9 @@ function start_training_session()
         # (deve ocorrer ANTES do handshake para o teacher ter texto para avaliar)
         if mm !== nothing
             try
-                id2char = Dict(v => k for (k, v) in char2id)
                 gen_ids = generate(model, md, SEQ_LEN; num_steps=20, temperature=0.5f0, valid_ids=valid_ids)
-                decoded = join([get(id2char, id, "") for id in gen_ids if id != md.mask_token_id && id > 4])
+                # SPM: tokens têm prefixo ▁ no lugar de espaço — substituir na decodificação
+                decoded = join([replace(get(id2char, id, ""), "▁" => " ") for id in gen_ids if id != md.mask_token_id && id > 4])
                 decoded_bytes = Vector{UInt8}(codeunits(decoded)[1:min(end, 399)])
                 mm[201:200+length(decoded_bytes)] .= decoded_bytes
                 mm[201+length(decoded_bytes):600] .= 0x00
