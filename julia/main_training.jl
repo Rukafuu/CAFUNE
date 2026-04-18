@@ -199,15 +199,17 @@ function start_training_session()
         mask_id    = Int(spm_cfg["mask_id"])
         pad_id     = Int(spm_cfg["pad_id"])
         @info "   SPM vocab_size=$vocab_size | mask_id=$mask_id"
-        # Todos os IDs são válidos para geração (SPM não tem tokens lixo)
-        # Exclui apenas PAD(0), UNK(1), BOS(2), EOS(3), MASK(4)
+        # valid_ids em 0-based: exclui PAD(0),UNK(1),BOS(2),EOS(3),MASK(4)
+        # Será shiftado +1 abaixo junto com os IDs do dataset
         valid_ids = collect(5:vocab_size-1)
         @info "   $(length(valid_ids)) tokens válidos para geração"
         # id2char para decodificação do output — lê vocab_spm.json se existir
         spm_vocab_file = normpath(joinpath(SCRIPT_DIR, "..", "python", "vocab_spm.json"))
         if isfile(spm_vocab_file)
             spm_vocab = JSON.parsefile(spm_vocab_file)
-            id2char   = Dict{Int,String}(Int(v) => string(k) for (k, v) in spm_vocab["char2id"])
+            # IDs do vocab_spm.json são 0-based; como shiftamos +1 no dataset,
+            # shiftamos +1 aqui também para manter consistência
+            id2char   = Dict{Int,String}(Int(v) + 1 => string(k) for (k, v) in spm_vocab["char2id"])
         else
             id2char = Dict{Int,String}()
         end
