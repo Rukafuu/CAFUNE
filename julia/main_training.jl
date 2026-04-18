@@ -230,9 +230,14 @@ function start_training_session()
     @info "2. Carregando dataset..."
     if use_spm
         @info "   Lendo dataset_tokens.json (pré-tokenizado com SPM)..."
-        raw_seqs  = JSON.parsefile(SPM_TOKENS)  # Vector of Vector{Int}
-        dataset   = [reshape(Int.(seq), SEQ_LEN, 1) for seq in raw_seqs]
-        @info "   Dataset SPM: $(length(dataset)) sequências únicas"
+        raw_seqs  = JSON.parsefile(SPM_TOKENS)  # Vector of Vector{Int} — IDs base-0 do SPM
+        # SPM usa IDs 0-based; Julia é 1-based → shift +1 em todos os IDs
+        dataset   = [reshape(Int.(seq) .+ 1, SEQ_LEN, 1) for seq in raw_seqs]
+        # Ajusta IDs especiais para 1-based
+        mask_id  += 1   # 4 → 5
+        pad_id   += 1   # 0 → 1
+        valid_ids = valid_ids .+ 1  # todos os valid_ids +1
+        @info "   Dataset SPM: $(length(dataset)) sequências únicas (IDs ajustados para 1-based)"
     else
         if !isfile(CORPUS_FILE)
             @error "social_data.json não encontrado: $CORPUS_FILE"
@@ -245,15 +250,12 @@ function start_training_session()
     @info "3. Inicializando modelo..."
     existing_model, _, start_epoch = try_resume()
 
-    # SPM: mask_id=4 está dentro do vocab. Config usa vocab_size direto.
-    # char-level: mask era vocab_size (fora do vocab), precisava de +1.
-    # SPM: mask_id=4 está dentro do vocab (vocab_size=1999 inclui tudo)
-    # char-level: mask era vocab_size (ID extra fora do vocab) → precisava +1
-    actual_vocab = use_spm ? vocab_size : vocab_size + 1
+    # Após shift +1: IDs vão de 1..vocab_size; mask_id já foi ajustado acima
+    # TransformerConfig recebe o tamanho real do embedding (vocab_size)
+    # char-level: mask era vocab_size (ID extra) → precisava +1
+    actual_vocab = vocab_size   # SPM e char-level ambos ficam corretos após ajustes
     config = TransformerConfig(actual_vocab, SEQ_LEN, D_MODEL, N_HEADS, N_LAYERS, D_FF, 0.0f0)
-    # Para SPM passamos vocab_size-1 ao construtor para que internamente fique vocab_size
-    md_base_vocab = use_spm ? vocab_size - 1 : vocab_size
-    md     = MaskDiffusion(md_base_vocab; mask_token_id=mask_id, num_steps=20)
+    md     = MaskDiffusion(vocab_size - 1; mask_token_id=mask_id, num_steps=20)
 
     if existing_model !== nothing
         model = existing_model
