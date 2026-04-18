@@ -197,12 +197,13 @@ function start_training_session()
     char2id, vocab_size = load_vocab(VOCAB_FILE)
     @info "   $vocab_size tokens carregados de $(basename(VOCAB_FILE))"
 
-    # Filtra tokens válidos para geração: apenas tokens curtos (≤4 chars)
-    # O vocab BPE tem tokens corrompidos com frases inteiras (IDs 90-460)
+    # Filtra tokens válidos para geração: exclui apenas tokens especiais e frases longas
+    # O novo vocab BPE (rebuild_vocab.py) tem tokens reais de len 1-11; frases completas
+    # aparecem apenas em len>8. Tokens como "para ", "você ", "mente " (len=5-6) são essenciais.
     id2char     = Dict(v => k for (k, v) in char2id)
-    valid_ids   = [id for (id, tok) in id2char if length(tok) <= 4]
+    valid_ids   = [id for (id, tok) in id2char if 1 <= length(tok) <= 8]
     sort!(valid_ids)
-    @info "   $(length(valid_ids)) tokens válidos para geração (comprimento ≤ 4 chars)"
+    @info "   $(length(valid_ids)) tokens válidos para geração (comprimento 1-8 chars)"
 
     # ── 2. Dataset ──────────────────────────────────────────────
     @info "2. Carregando dataset..."
