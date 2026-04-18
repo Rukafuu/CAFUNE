@@ -142,12 +142,13 @@ Passo de treino via Zygote (Autodiff Puro).
 Processa um batch de sequências de forma purificada para eficiência e estabilidade.
 """
 function train_step!(model::BidirectionalTransformer, md::MaskDiffusion,
-                     tokens::AbstractMatrix, opt_state)
-    
+                     tokens::AbstractMatrix, opt_state;
+                     epoch_progress::Float32=0.5f0)
+
     batch_size = size(tokens, 2)
-    
-    # 1. Amostrar tempos t e mascarar FORA do gradiente (purificação do Zygote)
-    t_batch = rand(Float32, batch_size)
+
+    # 1. Curriculum masking: t depende do progresso do treino (Open-dLLM)
+    t_batch = [curriculum_t(epoch_progress) for _ in 1:batch_size]
     masked_tokens, mask = forward_mask_batch(md, tokens, t_batch)
 
     # 2. Gradiente via Zygote (Diferencia apenas o pensamento do modelo)
@@ -228,36 +229,52 @@ end
 """
     train_on_reward!(model, md, opt_state_rl, tokens, reward) → (loss, opt_state_rl, model)
 
-Passo de RLAIF via Optimisers.jl (compatível com Functors/Zygote).
+TraceRL: RLAIF ao longo da trajetória de denoising (inspirado em dLLM-RL).
 
-Estratégia: usa o objetivo de difusão mascarada ponderado pelo reward.
-  - reward alto (≈1.0) → peso alto → reforça os padrões do tokens
-  - reward baixo (≈0.0) → peso ~0 → sem atualização significativa
+Em vez de amostrar um único t, percorre N pontos da trajetória x_T→x_0
+e aplica um gradiente em cada passo, com peso proporcional ao reward e
+ao progresso do denoising (passos mais limpos recebem peso maior).
 
-Difere de train_step! em dois pontos:
-  1. Usa opt_state_rl separado (LR menor, ex: 1e-5)
-  2. Gradiente é escalado pelo reward, não pelo erro de previsão puro
+- reward alto (≈1.0) → gradientes fortes ao longo da trajetória
+- reward baixo (≈0.0) → sem atualização significativa
+- passos com t baixo (texto quase limpo) recebem peso exp-crescente
+
+Referência: TraceRL / dLLM-RL (reward along denoising trajectory)
 """
 function train_on_reward!(model::BidirectionalTransformer, md::MaskDiffusion,
-                          opt_state_rl, tokens::AbstractMatrix, reward::Float32)
+                          opt_state_rl, tokens::AbstractMatrix, reward::Float32;
+                          n_trace_steps::Int=4)
     reward = clamp(reward, 0.0f0, 1.0f0)
+    reward == 0.0f0 && return 0.0f0, opt_state_rl, model
 
-    # Amostra t e máscara FORA do grafo (evita mutação dentro do Zygote)
-    t   = rand(Float32)
     seq = tokens[:, 1]
-    masked, mask = forward_mask_functional(md, seq, t)
 
-    !any(mask) && return 0.0f0, opt_state_rl, model
+    # Trajetória: de ruidoso (t alto) para limpo (t baixo)
+    t_steps = Float32[0.80f0, 0.55f0, 0.30f0, 0.10f0][1:n_trace_steps]
 
-    loss, grads = Zygote.withgradient(model) do m
-        logits = m(masked)
-        reward * cross_entropy_masked(logits, seq, mask)
+    total_loss = 0.0f0
+    n_valid = 0
+
+    for (k, t) in enumerate(t_steps)
+        masked, mask = forward_mask_functional(md, seq, t)
+        !any(mask) && continue
+
+        # Passos mais limpos (k maior) recebem peso exponencialmente maior
+        step_weight = reward * exp(Float32(k - 1) * 0.5f0) / Float32(n_trace_steps)
+
+        step_loss, grads = Zygote.withgradient(model) do m
+            logits = m(masked)
+            step_weight * cross_entropy_masked(logits, seq, mask)
+        end
+
+        grads[1] === nothing && continue
+        opt_state_rl, model = Optimisers.update(opt_state_rl, model, grads[1])
+        total_loss += step_loss
+        n_valid += 1
     end
 
-    grads[1] === nothing && return loss, opt_state_rl, model
-
-    new_opt_state, new_model = Optimisers.update(opt_state_rl, model, grads[1])
-    return loss, new_opt_state, new_model
+    avg_loss = n_valid > 0 ? total_loss / Float32(n_valid) : 0.0f0
+    return avg_loss, opt_state_rl, model
 end
 
 # ──────────────────────────────────────────────────────────────
@@ -270,10 +287,11 @@ Loop de treino completo com agendamento de LR.
 """
 function train!(model::BidirectionalTransformer, md::MaskDiffusion,
                 dataset::AbstractVector;
-                epochs::Int=10, 
+                epochs::Int=10,
                 max_lr::Float64=3e-4,
                 warmup_ratio::Float64=0.1,
-                log_every::Int=10)
+                log_every::Int=10,
+                epoch_progress::Float32=0.5f0)
 
     # 1. Configuração do Otimizador (AdamW)
     opt = Optimisers.Adam(Float32(max_lr))
@@ -306,7 +324,8 @@ function train!(model::BidirectionalTransformer, md::MaskDiffusion,
             Optimisers.adjust!(opt_state, lr)
             
             # --- STEP DE TREINO ---
-            loss, opt_state, model = train_step!(model, md, tokens, opt_state)
+            loss, opt_state, model = train_step!(model, md, tokens, opt_state;
+                                                 epoch_progress=epoch_progress)
             
             epoch_loss += loss
 

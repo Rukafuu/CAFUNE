@@ -69,13 +69,50 @@ graph TD
 | Item | Valor |
 |:-----|:------|
 | Parâmetros | ~5M (d_model=256, 8 heads, 6 layers) |
-| Vocabulário | 500 tokens BPE — 413 valid_ids (len≤4), 38 com acentos PT-BR |
+| Vocabulário | SentencePiece BPE 2000 subwords PT-BR (`cafune_spm.model`) |
 | Sequência | 128 tokens |
 | Difusão | LLaDA-style masked discrete diffusion, 20 denoising steps, temp=0.5 |
-| Treino | LR=5e-6 constante, Adam, Zygote autodiff |
-| Dataset | ~6000 pares PT-BR em `bercario_data.jsonl` |
+| Treino | Cosine LR (max=8e-6, warmup=5%), Adam, Zygote autodiff, 500 steps/epoch |
+| Dataset | ~6300 sequências únicas em `bercario_data.jsonl` (pré-tokenizadas com SPM) |
 | Teacher | BitNet 60% (semântica) + Flair 40% (sentimento + POS + cobertura) |
 | Monitoramento | W&B projeto `cafune` + Dashboard local :5000 |
+
+---
+
+---
+
+## Técnicas dLLM Implementadas
+
+Melhorias baseadas em pesquisa recente de diffusion language models:
+
+| Técnica | Origem | Descrição | Arquivo |
+|:--------|:-------|:----------|:--------|
+| **Curriculum Masking** | Open-dLLM | `t` cresce de U[0.1,0.3] → U[0.6,0.9] ao longo do treino | `diffusion.jl` |
+| **Confidence-Threshold Decoding** | Fast-dLLM | Denoising para cedo quando min(confiança) ≥ 0.85 | `diffusion.jl` |
+| **TraceRL** | dLLM-RL | Reward aplicado em 4 pontos da trajetória x_T→x_0, com peso crescente nos passos mais limpos | `training.jl` |
+| **Value Head** | UniGRPO / MMaDA | MLP 3→32→1 estima retorno esperado do estado de denoising; usado como proxy reward quando o teacher está offline | `main_training.jl` |
+
+### Curriculum Masking
+
+Em vez de amostrar `t ~ U[0,1]` uniformemente, o nível de mascaramento aumenta com o progresso do treino:
+
+```
+Epochs  0–30%  →  t ~ U[0.10, 0.30]  (fácil — poucos tokens mascarados)
+Epochs 30–70%  →  t ~ U[0.30, 0.60]  (moderado)
+Epochs 70–100% →  t ~ U[0.60, 0.90]  (difícil — muito mascaramento)
+```
+
+### Confidence-Threshold Decoding
+
+A cada passo de denoising, se `min(confiança dos tokens mascarados) ≥ 0.85`, todos são revelados de uma vez e o loop encerra antecipadamente — gerando texto mais rápido sem perda de qualidade.
+
+### TraceRL
+
+`train_on_reward!()` percorre 4 pontos da trajetória `[0.80, 0.55, 0.30, 0.10]` e aplica um gradiente em cada um. Passos mais próximos de x₀ (texto limpo) recebem peso `exp(k × 0.5)` maior.
+
+### Value Head (UniGRPO)
+
+MLP leve com features `[mask_ratio, avg_token_norm, epoch_progress]` treinado com MSE contra o reward real do teacher. Quando o BitNet Teacher não responde, o value head fornece um reward proxy para manter o RLAIF ativo.
 
 ---
 
