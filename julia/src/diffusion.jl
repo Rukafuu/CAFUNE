@@ -128,6 +128,28 @@ function sample_t(batch_size::Int)
 end
 
 """
+    curriculum_t(epoch_progress) → Float32
+
+Amostra t de acordo com o progresso do treino (Open-dLLM curriculum masking).
+Começa com mascaramento leve (fácil) e evolui para mascaramento pesado (difícil).
+
+- progress ∈ [0.0, 0.3]: t ~ U[0.10, 0.30] — pouco mascaramento, fácil de prever
+- progress ∈ [0.3, 0.7]: t ~ U[0.30, 0.60] — mascaramento moderado
+- progress ∈ [0.7, 1.0]: t ~ U[0.60, 0.90] — mascaramento pesado, difícil
+
+Referência: Open-dLLM (curriculum masking schedule)
+"""
+function curriculum_t(epoch_progress::Float32)
+    if epoch_progress < 0.3f0
+        return 0.10f0 + rand(Float32) * 0.20f0   # U[0.10, 0.30]
+    elseif epoch_progress < 0.7f0
+        return 0.30f0 + rand(Float32) * 0.30f0   # U[0.30, 0.60]
+    else
+        return 0.60f0 + rand(Float32) * 0.30f0   # U[0.60, 0.90]
+    end
+end
+
+"""
     get_inference_timesteps(md) → Vector{Float32}
 
 Retorna os timesteps para inferência, do mais ruidoso ao mais limpo.
@@ -170,7 +192,8 @@ confiantes a cada passo, do mais ruidoso ao mais limpo.
 """
 function generate(model, md::MaskDiffusion, seq_len::Int;
                   num_steps::Int=10, temperature::Float32=1.0f0,
-                  valid_ids::Union{Nothing,Vector{Int}}=nothing)
+                  valid_ids::Union{Nothing,Vector{Int}}=nothing,
+                  confidence_threshold::Float32=0.85f0)
 
     # Começa completamente mascarado
     tokens = fill(md.mask_token_id, seq_len)
@@ -204,6 +227,30 @@ function generate(model, md::MaskDiffusion, seq_len::Int;
 
         # Confiança = probabilidade máxima em cada posição
         confidences = [maximum(probs[:, i]) for i in 1:seq_len]
+
+        # ── Confidence-threshold early stopping (Fast-dLLM) ──────────
+        # Se todos os tokens mascarados restantes têm confiança ≥ threshold,
+        # revela todos de uma vez e encerra antecipadamente.
+        masked_idx_all = findall(==(md.mask_token_id), tokens)
+        if !isempty(masked_idx_all)
+            min_conf = minimum(confidences[masked_idx_all])
+            if min_conf >= confidence_threshold
+                for i in masked_idx_all
+                    r = rand(Float32)
+                    cumsum_p = 0.0f0
+                    chosen = 1
+                    for k in 1:size(probs, 1)
+                        cumsum_p += probs[k, i]
+                        if r <= cumsum_p
+                            chosen = k
+                            break
+                        end
+                    end
+                    tokens[i] = chosen
+                end
+                break  # saída antecipada — todos os tokens são confiantes
+            end
+        end
 
         # Quantos tokens revelar neste passo
         n_masked_now  = count(==(md.mask_token_id), tokens)

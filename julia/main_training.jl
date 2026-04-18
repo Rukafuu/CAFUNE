@@ -16,6 +16,72 @@ include("src/transformer.jl")
 include("src/diffusion.jl")
 include("src/training.jl")
 
+# ── Value Head (UniGRPO/MMaDA) ────────────────────────────────────
+# MLP leve que estima o retorno esperado a partir do estado atual
+# de denoising. Features: [mask_ratio, avg_token_norm, epoch_progress]
+# Treinado com MSE contra o reward real observado do teacher.
+
+mutable struct ValueHead
+    W1::Matrix{Float32}   # (d_h, 3)
+    b1::Vector{Float32}   # (d_h,)
+    W2::Matrix{Float32}   # (1, d_h)
+    b2::Vector{Float32}   # (1,)
+end
+
+Functors.@functor ValueHead (W1, b1, W2, b2)
+
+function ValueHead(; d_hidden::Int=32)
+    s = Float32(sqrt(3.0))
+    ValueHead(
+        randn(Float32, d_hidden, 3) .* s,
+        zeros(Float32, d_hidden),
+        randn(Float32, 1, d_hidden) ./ Float32(sqrt(d_hidden)),
+        zeros(Float32, 1)
+    )
+end
+
+"""
+    predict_value(vh, tokens, mask_id, vocab_size, epoch_progress) → Float32
+
+Estima o retorno esperado a partir do estado atual de denoising.
+Retorna valor ∈ (0, 1).
+"""
+function predict_value(vh::ValueHead, tokens::Vector{Int},
+                       mask_id::Int, vocab_size::Int, epoch_progress::Float32)
+    mask_ratio   = Float32(count(==(mask_id), tokens)) / Float32(length(tokens))
+    avg_tok_norm = Float32(mean(filter(t -> t != mask_id, tokens); init=0)) / Float32(vocab_size)
+    features     = Float32[mask_ratio, avg_tok_norm, epoch_progress]
+    h = tanh.(vh.W1 * features .+ vh.b1)
+    v = (vh.W2 * h .+ vh.b2)[1]
+    return 1.0f0 / (1.0f0 + exp(-v))   # sigmoid → (0, 1)
+end
+
+"""
+    train_value_head!(vh, opt_vh, tokens, mask_id, vocab_size, epoch_progress, actual_reward)
+
+Um step MSE para o value head: minimiza (V(x_t) - r)².
+"""
+function train_value_head!(vh::ValueHead, opt_vh,
+                            tokens::Vector{Int}, mask_id::Int,
+                            vocab_size::Int, epoch_progress::Float32,
+                            actual_reward::Float32)
+    mask_ratio   = Float32(count(==(mask_id), tokens)) / Float32(length(tokens))
+    avg_tok_norm = Float32(mean(filter(t -> t != mask_id, tokens); init=0)) / Float32(vocab_size)
+    features     = Float32[mask_ratio, avg_tok_norm, epoch_progress]
+    target       = actual_reward
+
+    loss_vh, grads_vh = Zygote.withgradient(vh) do v
+        h = tanh.(v.W1 * features .+ v.b1)
+        val = (v.W2 * h .+ v.b2)[1]
+        predicted = 1.0f0 / (1.0f0 + exp(-val))
+        (predicted - target)^2
+    end
+
+    grads_vh[1] === nothing && return loss_vh, opt_vh, vh
+    opt_vh, vh = Optimisers.update(opt_vh, vh, grads_vh[1])
+    return loss_vh, opt_vh, vh
+end
+
 # ── Paths absolutos ───────────────────────────────────────────────
 const SCRIPT_DIR  = @__DIR__
 const MEM_FILE    = normpath(joinpath(SCRIPT_DIR, "..", "cafune_brain.mem"))
@@ -292,26 +358,35 @@ function start_training_session()
     opt_rl       = Optimisers.Adam(Float32(RLAIF_LR))
     opt_state_rl = Optimisers.setup(opt_rl, model)
 
+    # Value head (UniGRPO) — estima retorno esperado do estado de denoising
+    value_head    = ValueHead(d_hidden=32)
+    opt_vh        = Optimisers.Adam(1f-3)
+    opt_state_vh  = Optimisers.setup(opt_vh, value_head)
+
     # ── 5. Loop de treino com checkpointing e RLAIF ────────────
     best_loss = Inf32
     STEPS_PER_EPOCH = 500  # subsample por epoch — dataset completo visto em ~13 epochs
-    @info "5. Iniciando treino | epochs $(start_epoch+1)→$(start_epoch+EPOCHS) | $STEPS_PER_EPOCH steps/epoch"
+    TOTAL_EPOCHS    = start_epoch + EPOCHS
+    @info "5. Iniciando treino | epochs $(start_epoch+1)→$TOTAL_EPOCHS | $STEPS_PER_EPOCH steps/epoch"
 
     for epoch in 1:EPOCHS
-        actual_epoch = start_epoch + epoch
+        actual_epoch  = start_epoch + epoch
+        # progress ∈ [0, 1] ao longo de todo o treino planejado — usado no curriculum
+        epoch_progress = Float32(actual_epoch - 1) / Float32(max(TOTAL_EPOCHS - 1, 1))
         println()
-        @info "── Epoch $actual_epoch/$(start_epoch + EPOCHS) ──────────────────────"
+        @info "── Epoch $actual_epoch/$TOTAL_EPOCHS (progress=$(round(epoch_progress,digits=2))) ──"
         flush(stdout)
 
         # Subsample aleatório do dataset para manter epochs rápidas (~5 min)
         n_steps    = min(STEPS_PER_EPOCH, length(dataset))
         epoch_data = dataset[randperm(length(dataset))[1:n_steps]]
 
-        # ── Treino supervisionado ──
+        # ── Treino supervisionado (com curriculum masking) ──
         model = train!(model, md, epoch_data;
-                       epochs        = 1,
-                       max_lr        = MAX_LR,
-                       warmup_ratio  = WARMUP_RATIO)
+                       epochs         = 1,
+                       max_lr         = MAX_LR,
+                       warmup_ratio   = WARMUP_RATIO,
+                       epoch_progress = epoch_progress)
 
         # ── Estimar loss ──
         sample_n     = min(20, length(dataset))
@@ -396,9 +471,31 @@ function start_training_session()
                 rl_loss, opt_state_rl, model = train_on_reward!(
                     model, md, opt_state_rl, dataset[rl_idx], combined_reward
                 )
-                @printf("   [RLAIF] Loss RLAIF: %.4f\n", rl_loss)
+                @printf("   [RLAIF] TraceRL loss: %.4f\n", rl_loss)
+
+                # ── Value head: treina para prever o reward observado ──
+                ref_tokens = vec(dataset[rl_idx][:, 1])
+                vh_loss, opt_state_vh, value_head = train_value_head!(
+                    value_head, opt_state_vh,
+                    ref_tokens, mask_id, vocab_size, epoch_progress, combined_reward
+                )
+                predicted_v = predict_value(value_head, ref_tokens, mask_id, vocab_size, epoch_progress)
+                @printf("   [ValueHead] MSE loss: %.4f | Predicted V=%.3f vs Actual R=%.3f\n",
+                        vh_loss, predicted_v, combined_reward)
             else
-                @info "   [RLAIF] Reward zerado ou nulo — sem atualização RLAIF neste epoch."
+                # Teacher ausente: usa value head para estimar reward e roda RLAIF
+                rl_idx      = rand(1:length(dataset))
+                ref_tokens  = vec(dataset[rl_idx][:, 1])
+                predicted_v = predict_value(value_head, ref_tokens, mask_id, vocab_size, epoch_progress)
+                if predicted_v > 0.3f0
+                    @info "   [ValueHead] Teacher offline — usando V̂=$(round(predicted_v,digits=3)) como proxy reward"
+                    rl_loss, opt_state_rl, model = train_on_reward!(
+                        model, md, opt_state_rl, dataset[rl_idx], predicted_v
+                    )
+                    @printf("   [RLAIF proxy] TraceRL loss: %.4f\n", rl_loss)
+                else
+                    @info "   [RLAIF] Reward zerado e V̂ baixo — sem atualização RLAIF neste epoch."
+                end
             end
         end
 
@@ -406,7 +503,7 @@ function start_training_session()
         open(TRAIN_LOG, "a") do f
             entry = JSON.json(Dict(
                 "epoch"      => actual_epoch,
-                "total"      => start_epoch + EPOCHS,
+                "total"      => TOTAL_EPOCHS,
                 "loss"       => round(Float64(avg_loss), digits=4),
                 "best_loss"  => round(Float64(min(avg_loss, best_loss)), digits=4),
                 "timestamp"  => Dates.format(now(), "HH:MM:SS"),
