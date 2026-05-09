@@ -42,3 +42,9 @@ temp/
 # Scripts de execução local
 *.bat
 start_*.cmd
+
+# Pesos e Membranas (Modelos Grandes > 100MB)
+*.bson
+*.mem
+*.jsonl
+.CondaPkg/

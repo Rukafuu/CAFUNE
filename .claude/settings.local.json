@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api:*)",
+      "Bash(npm install:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(cmd /c \"taskkill /F /IM node.exe\")",
+      "Bash(cmd /c \"rmdir /S /Q C:\\\\Users\\\\conta\\\\Documents\\\\Lira\\\\Lira\\\\CAFUNE\\\\luma\")",
+      "Bash(cmd /c \"powershell -Command \"\"Remove-Item -Recurse -Force ''C:\\\\Users\\\\conta\\\\Documents\\\\Lira\\\\Lira\\\\CAFUNE\\\\luma''\"\"\")",
+      "Bash(gh pr:*)",
+      "Bash(cmd /c \"netstat -ano | findstr :5173\")",
+      "Bash(cmd /c \"netstat -ano | findstr :5174\")",
+      "Bash(cmd /c \"taskkill /F /IM node.exe /T\")"
+    ]
+  }
+}

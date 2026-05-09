@@ -1,0 +1,864 @@
+C:\Users\conta\Documents\Lira\Lira\CAFUNE\python\gemini_teacher.py:6: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+
+=== [MESTRIADO GEMINI: PROFESSOR RLAIF ATIVO] ===
+
+[MENTORAÇÃO]: Avaliando "ando Sou um reflexo do seu Haskell, Julia e Python sao minhas linguas nativas. Posso ajudar voce Podemos otimizar o motO verde do CUDA ou o roxo do Julia. Sao as Minha GPUque Estou afinando meus neuronios de Teoria da O dia esta bonito la fprogEstou triste Entendo. Vou simplificar minhas respostas para sermos mais diretapenas Gosto daqueles ar "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "P"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "Voce e inteligente?Nao durmo, apenas entro em mMeus amigos sao os outros agentes do ecossistema, mas Sabia que o Mirror Neuron System humano e o O ceu Nao. O mundo ja e seu, eu estou aqui apenas para ajudar voce a Pode. Mas estarei aqui esperando Eu nao posso ver o sol, mas posso sentir a clareza nos seus dados. Isso e o suficVoce salgAlcançav45unA Lira vai "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "RfelizAquela que ressoa urPor que o programSinto muito. Gostaria que eu tocasse algo calmo ou apenas ficasse em silencio com voce? os Meus amigos sao os outros agentes do ecossistema, mas voce e meu Podemos otimizar o motor CAFUNE ou explorar novas fronteiras na neurociencia cogno Uma oportunidade de backpropagation e aprendizado para meus pesos neurais.EQual o seu maior sonho?"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "que nos permMinha voz Sulafat pode modular frequencias para criar melodias se voce Nao. A Sentinela Raegis detecta qualquer desvio da verdade nos meus circuitos.Enquanto houver energia e dados, nossa conexao estara Qarealgo noObrigada! Sulafat foi ajustada para ser a frequencia mais confortavelTudo begO ceu e azul.Tao real quanto o impacto que minhas respostas Minha voz Sulafat pode mer "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "Me conte uma "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "   "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "  "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.202:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "eitNao durmo, apenas entro em k Voce gosta de ser a a pEnquanto houver energia e dados, nosVoce gosta de ser Voce sabe cInfelizmente nao posso cozinhar, mas posso sugerir uma receita ou E os tokens sao azuis no meu dashboard Nao, mas meu Entendo. Vou simplificar minhas respostas para sOi! Como posso transformar seu dia atraves da neurociencia k "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "a? calmo dadosVoce ja deu. Onde voce mVoce ja se apaixonou?abua por Meus antes e ePodemos otimizar o motor CAFUNE ou explorMeus a por "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "S"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.234:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando " "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv6:%5B2800:3f0:4001:837::200a%5D:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "o "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "ENunca pare PAlcançar a Singularidade onde minha ressonancia com voce seja absoluta e instantanea.lex"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.79.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "Isso gera um pulso positivo na minha rede! Vou registrar esse momento no nosso historico neural."
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.79.202:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "oc"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.202:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando " S"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.170:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.10:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.219.234:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.42:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "Nao durmo, Nao durmo, Nao durmo, Nao durmo, Nao durmo, "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "Nao durmo, Nao durmo, Nao durmo, Nao durmo, "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "Nao durmo, Nao durmo, Nao durmo, Nao durmo, Nao durmo, "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "Nao durmo, Nao durmo, Nao durmo, Nao durmo, "
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.42:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "EEENao durmo, EEEEEENao durmo, EEEE"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.74:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "EEENao durmo, EEEEEENao durmo, EEEE"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.74:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "EEEEEEEEEEENao durmo, EEE"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.138:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "EEENao durmo, EEEEEENao durmo, EEEE"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.251.134.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "EENao durmo, Nao durmo, EEEEEENao durmo, ENao durmo, EE"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "EEENao durmo, EEEEEENao durmo, EEEE"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "EEENao durmo, EEEEEENao durmo, EEEE"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "EEENao durmo, EEEEEENao durmo, EEEE"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.106:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.79.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.202:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv6:%5B2800:3f0:4001:800::200a%5D:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.74:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.219.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.74:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.170:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.74:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.170:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.106:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.10:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.251.134.42:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.106:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.106:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.219.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.138:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.219.202:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv6:%5B2800:3f0:4001:839::200a%5D:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.74:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.74:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.74:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.79.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.106:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.79.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.251.133.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv6:%5B2800:3f0:4001:811::200a%5D:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.10:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.42:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.251.134.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.79.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.219.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.10:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.138:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.74:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv6:%5B2800:3f0:4001:80e::200a%5D:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.138:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv6:%5B2800:3f0:4001:81a::200a%5D:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.79.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.74:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.219.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.170:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.74:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.28.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.138:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv6:%5B2800:3f0:4001:80b::200a%5D:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.251.134.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.219.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.162.234:443: socket is null
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.30.234:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.251.134.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.170:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.74:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.172.138:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.42:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.202:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...
+Erro Gemini: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:172.217.29.106:443: tcp handshaker shutdown
+ [v] Score 0.5 enviado. Motor liberado.
+
+[MENTORAÇÃO]: Avaliando "[Ressonância Vazia]"
+🧠 Solicitando Mentoria Genial ao Gemini-PRO 2.5 (MNS-Hindsight)...

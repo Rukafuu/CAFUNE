@@ -42,11 +42,13 @@ end
 const (char2id, id2char) = load_tokenizer()
 @info "[PULSE CHECK] ID do Espaço ' ' mapeado para: $(get(char2id, " ", "N/A"))"
 
-function generate_neural_response(prompt::AbstractString; max_len=20)
+include("src/snn_core.jl")
+
+function generate_neural_response(prompt::AbstractString; max_len=100)
     # O usuário treinou rodando do diretório raiz do Lira, então o BSON parou lá
     model_path = joinpath(@__DIR__, "..", "..", "cafune_model.bson")
     if !isfile(model_path)
-        return "Sinal de silício ausente (model.bson não encontrado).", Int[]
+        return "Sinal de silício ausente (model.bson não encontrado)."
     end
     
     # Carregar modelo salvo
@@ -67,32 +69,23 @@ function generate_neural_response(prompt::AbstractString; max_len=20)
         input_ids = vcat(ones(Int, 128 - length(input_ids)), input_ids)
     end
     
-    # Loop de Geracao (Sampling Probabilístico)
-    temp = 0.4f0 # Baixando a temperatura para reduzir entropia (ÚÚÚ...)
+    # Iniciar Motor Híbrido: SNN Decoder
+    # Usando o vocab de 65 (nossas letras treinadas) e 30 timesteps para pensar
+    snn_decoder = SpikingDecoder(65; timesteps=30)
+    
+    # Loop de Geracao (Spiking)
     output_tokens = Int[]
     curr_input = vec(input_ids) 
     
-    for _ in 1:max_len 
+    for _ in 1:20 
         logits = model(curr_input) 
         
-        # Focar nas 65 letras treinadas (ajustado conforme vocab real)
-        last_col = logits[1:min(65, size(logits, 1)), end]
+        # Focar nas 65 letras treinadas
+        last_col = logits[1:65, end]
         
-        # --- [PROBABILISTIC SAMPLING] ---
-        probs = exp.((last_col .- maximum(last_col)) ./ temp)
-        probs ./= sum(probs)
-        
-        # Roleta russa neural (Sampling)
-        r = rand()
-        acc = 0.0
-        next_token = 1
-        for (i, p) in enumerate(probs)
-            acc += p
-            if r <= acc
-                next_token = i
-                break
-            end
-        end
+        # --- [SNN SAMPLING: Cognição Neuromórfica] ---
+        # O SNN converte a estatística em biologia
+        next_token = snn_decoder(last_col)
         
         push!(output_tokens, next_token)
         curr_input = vcat(curr_input[2:end], [next_token])

@@ -2,7 +2,7 @@
   <img src="assets/logo.png" width="400" alt="CAFUNE Logo">
 </p>
 
-# CAFUNE: Motor de Difusão Discreta em PT-BR (~5M params)
+# CAFUNE: Motor SNN 11D + Transformer Bidirecional (~22.5M params)
 
 <p align="center">
   <img src="https://img.shields.io/badge/Julia-9558b2?style=for-the-badge&logo=julia&logoColor=white" alt="Julia">
@@ -14,119 +14,57 @@
 
 > _"Não estava eu formando um ser horrível e transgressor?"_ — Mary Shelley
 
-**CAFUNE** é um transformer bidirecional treinado com **difusão discreta mascarada** (estilo LLaDA) para geração de texto em português brasileiro. O pipeline de treinamento é 100% local — sem APIs externas, sem custo por chamada.
+**CAFUNE** (Cognição Artificial Fundamentada em Neuromorfologia) é um motor de IA híbrido escrito em Julia. Ele combina um Transformer clássico para a base de conhecimento com um **Reservatório Spiking Neural Network (SNN) de 11 Dimensões**, trazendo dinâmica temporal e biológica para o processo de geração. O modelo passa por alinhamento ético contínuo via **RLAIF (Reinforcement Learning from AI Feedback)**.
 
 ---
 
-## Arquitetura
+## Arquitetura Híbrida
 
 ```mermaid
 graph TD
-    subgraph Motor_Julia["Motor (Julia)"]
-        A[BidirectionalTransformer ~5M] -->|masked diffusion| B[generate]
-        B -->|output text| C[cafune_brain.mem 2048B]
-        C -->|mm0=0x03 handshake| D[Teacher Python]
+    subgraph Motor_Julia["Motor de Inferência (Julia)"]
+        A[BidirectionalTransformer ~22.5M] -->|Logits Estatísticos| B[SNN Hypercube Reservoir 11D]
+        B -->|Poisson Spikes & Voltagem| C[SpikingDecoder - 65 Tokens]
+        C -->|Token Gerado| D[MMap Buffer / Output]
     end
 
-    subgraph Teacher_Python["Teacher RLAIF (Python)"]
-        D -->|60%| E[BitNet llama-server:8080]
-        D -->|40%| F[Flair NLP sentiment+POS]
-        E & F -->|MNS score| G[mm0=0x04 + suggestion]
+    subgraph Teacher_Python["Teacher RLAIF (Python/OpenRouter)"]
+        D -->|Avaliação do Balbucio| E[Ling 2.6 via OpenRouter API]
+        E -->|Reward 0.0 - 1.0| F[Julia Zygote - Policy Gradient]
+        F -->|Atualiza Pesos SNN| B
     end
 
-    subgraph Sentinelas["Sentinelas (Python)"]
-        C -->|timestamp poll| H[Raegis Sentinel — ética/sycophancy]
-        C -->|timestamp poll| I[Guardian — IsolationForest anomaly]
-    end
-
-    subgraph Observabilidade["Observabilidade"]
-        C -->|metrics| J[Dashboard Flask :5000]
-        C -->|training_log.jsonl| K[W&B Logger]
+    subgraph Observabilidade["Monitoramento"]
+        F -->|Métricas de Recompensa| G[Weights & Biases]
     end
 ```
 
-### Mapa de memória (`cafune_brain.mem`, 2048 bytes)
-
-| Offset | Tipo | Escrito por | Propósito |
-|--------|------|-------------|-----------|
-| 0 | uint8 | Julia / Teacher | Handshake: `0x00`=idle `0x03`=output pronto `0x04`=avaliação pronta |
-| 20–28 | float64 | Julia | Timestamp Unix (sentinelas detectam novo output por mudança aqui) |
-| 32–40 | float64 | Julia | Loss atual |
-| 40–44 | float32 | Teacher | MNS score — BitNet+Flair combinado |
-| 44–48 | float32 | Teacher | MNS local — apenas Flair |
-| 48–52 | float32 | Raegis | Raegis penalty (×2 se ethics flag = 1) |
-| 52–56 | float32 | Guardian | Guardian penalty ∈ [0, 0.5] — anomalia comportamental |
-| 60 | uint8 | Raegis | Ethics flag: `0x01` = sycophancy detectada |
-| 200–600 | UTF-8 | Julia | Output do modelo |
-| 600–1000 | UTF-8 | Julia | Prompt de contexto |
-| 1001–1400 | UTF-8 | Teacher | Sugestão de melhoria |
-| 1401–1800 | UTF-8 | Teacher | Razão da avaliação |
+### O Hipercubo 11D (SNN Reservoir)
+Em vez de um *Softmax* determinístico, os logits do Transformer são projetados num reservatório caótico de 2048 neurônios organizados numa topologia de **Hipercubo 11D** (cada neurônio tem exatamente 11 conexões de distância de Hamming 1). A saída é lida medindo a "tensão residual" da membrana (Leaky Integrate-and-Fire) usando temperatura estocástica.
 
 ---
 
-## Especificações
+## Especificações do Motor
 
 | Item | Valor |
 |:-----|:------|
-| Parâmetros | ~5M (d_model=256, 8 heads, 6 layers) |
-| Vocabulário | SentencePiece BPE 2000 subwords PT-BR (`cafune_spm.model`) |
-| Sequência | 128 tokens |
-| Difusão | LLaDA-style masked discrete diffusion, 20 denoising steps, temp=0.5 |
-| Treino | Cosine LR (max=8e-6, warmup=5%), Adam, Zygote autodiff, 500 steps/epoch |
-| Dataset | ~6300 sequências únicas em `bercario_data.jsonl` (pré-tokenizadas com SPM) |
-| Teacher | BitNet 60% (semântica) + Flair 40% (sentimento + POS + cobertura) |
-| Monitoramento | W&B projeto `cafune` + Dashboard local :5000 |
+| Parâmetros (Base) | ~22.5M (d_model=512, 12 heads, 6 layers) |
+| SNN Reservoir | 2048 LIF Neurons (11D Topology) |
+| Vocabulário | 65 caracteres/tokens isolados (Customizado para "balbucio") |
+| Tempo Cognitivo | 30 Timesteps (Simulação SNN para cada token) |
+| Treino Base | Cosine LR, Adam, Zygote autodiff, GPU/CPU |
+| Treino SNN (RLAIF)| Policy Gradient sobre o Readout Layer guiado pelo Ling 2.6 |
+| Monitoramento | W&B projeto `Lira-CAFUNE` |
 
 ---
 
----
+## RLAIF — Reinforcement Learning from AI Feedback
 
-## Técnicas dLLM Implementadas
-
-Melhorias baseadas em pesquisa recente de diffusion language models:
-
-| Técnica | Origem | Descrição | Arquivo |
-|:--------|:-------|:----------|:--------|
-| **Curriculum Masking** | Open-dLLM | `t` cresce de U[0.1,0.3] → U[0.6,0.9] ao longo do treino | `diffusion.jl` |
-| **Confidence-Threshold Decoding** | Fast-dLLM | Denoising para cedo quando min(confiança) ≥ 0.85 | `diffusion.jl` |
-| **TraceRL** | dLLM-RL | Reward aplicado em 4 pontos da trajetória x_T→x_0, com peso crescente nos passos mais limpos | `training.jl` |
-| **Value Head** | UniGRPO / MMaDA | MLP 3→32→1 estima retorno esperado do estado de denoising; usado como proxy reward quando o teacher está offline | `main_training.jl` |
-
-### Curriculum Masking
-
-Em vez de amostrar `t ~ U[0,1]` uniformemente, o nível de mascaramento aumenta com o progresso do treino:
-
-```
-Epochs  0–30%  →  t ~ U[0.10, 0.30]  (fácil — poucos tokens mascarados)
-Epochs 30–70%  →  t ~ U[0.30, 0.60]  (moderado)
-Epochs 70–100% →  t ~ U[0.60, 0.90]  (difícil — muito mascaramento)
-```
-
-### Confidence-Threshold Decoding
-
-A cada passo de denoising, se `min(confiança dos tokens mascarados) ≥ 0.85`, todos são revelados de uma vez e o loop encerra antecipadamente — gerando texto mais rápido sem perda de qualidade.
-
-### TraceRL
-
-`train_on_reward!()` percorre 4 pontos da trajetória `[0.80, 0.55, 0.30, 0.10]` e aplica um gradiente em cada um. Passos mais próximos de x₀ (texto limpo) recebem peso `exp(k × 0.5)` maior.
-
-### Value Head (UniGRPO)
-
-MLP leve com features `[mask_ratio, avg_token_norm, epoch_progress]` treinado com MSE contra o reward real do teacher. Quando o BitNet Teacher não responde, o value head fornece um reward proxy para manter o RLAIF ativo.
-
----
-
-## MNS — Mirror Neuron Score
-
-O **MNS** avalia a qualidade da resposta gerada em três dimensões:
-
-| Dimensão | Peso | Como é medido |
-|:---------|:-----|:--------------|
-| D_sentiment | 40% | Flair TextClassifier — polaridade da resposta vs prompt |
-| D_grammar | 35% | Flair POS tagger — diversidade lexical e cobertura gramatical |
-| D_coverage | 25% | Sobreposição de keywords entre prompt e resposta |
-
-O score BitNet (60% do reward final) avalia coerência semântica via `llama-server` local com o modelo BitNet-b1.58-2B-4T.
+Diferente de um modelo determinístico, a natureza caótica da SNN produz "balbucios" e variações na geração (Sampling Estocástico).
+O loop RLAIF funciona assim:
+1. O modelo tenta responder a um prompt e gera `N` variações.
+2. O **Raegis** (Juiz alimentado por Ling 2.6 no OpenRouter) lê as variações e julga qual soa mais natural, coerente e com alta empatia (Mirror Neuron Score).
+3. O Zygote penaliza a voltagem que gerou as respostas fracas e recompensa o caminho sináptico que gerou as respostas boas, moldando a "mandíbula" da Lira com o tempo.
 
 ---
 
