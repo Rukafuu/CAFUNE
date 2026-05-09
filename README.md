@@ -15,7 +15,7 @@
 <br>
 
 <p align="center">
-  <img src="assets/cafune_diagram.png" width="800" alt="CAFUNE Architecture Diagram">
+  <img src="assets/cafune_blueprint.png" width="800" alt="CAFUNE Neuromorphic Blueprint">
 </p>
 
 > _"Não estava eu formando um ser horrível e transgressor?"_ — Mary Shelley
