@@ -12,6 +12,12 @@
   <img src="https://img.shields.io/badge/W%26B-FFBE00?style=for-the-badge&logo=weightsandbiases&logoColor=black" alt="W&B">
 </p>
 
+<br>
+
+<p align="center">
+  <img src="assets/cafune_diagram.png" width="800" alt="CAFUNE Architecture Diagram">
+</p>
+
 > _"Não estava eu formando um ser horrível e transgressor?"_ — Mary Shelley
 
 **CAFUNE** (Cognição Artificial Fundamentada em Neuromorfologia) é um motor de IA híbrido escrito em Julia. Ele combina um Transformer clássico para a base de conhecimento com um **Reservatório Spiking Neural Network (SNN) de 11 Dimensões**, trazendo dinâmica temporal e biológica para o processo de geração. O modelo passa por alinhamento ético contínuo via **RLAIF (Reinforcement Learning from AI Feedback)**.
