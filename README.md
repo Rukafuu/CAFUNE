@@ -25,13 +25,15 @@ graph TD
     subgraph Motor_Julia["Motor de Inferência (Julia)"]
         A[BidirectionalTransformer ~22.5M] -->|Logits Estatísticos| B[SNN Hypercube Reservoir 11D]
         B -->|Poisson Spikes & Voltagem| C[SpikingDecoder - 65 Tokens]
-        C -->|Token Gerado| D[MMap Buffer / Output]
+        B -.->|Tensão da Membrana| V[UniGRPO Value Head]
+        V -.->|Confiança >= 85%| C
+        C -->|Early Stopping Token| D[MMap Buffer / Output]
     end
 
     subgraph Teacher_Python["Teacher RLAIF (Python/OpenRouter)"]
         D -->|Avaliação do Balbucio| E[Ling 2.6 via OpenRouter API]
-        E -->|Reward 0.0 - 1.0| F[Julia Zygote - Policy Gradient]
-        F -->|Atualiza Pesos SNN| B
+        E -->|Reward 0.0 - 1.0| F[Julia Zygote - Policy Gradient & MSE Loss]
+        F -->|Surrogate Gradients| B
     end
 
     subgraph Observabilidade["Monitoramento"]
@@ -42,6 +44,11 @@ graph TD
 ### O Hipercubo 11D (SNN Reservoir)
 Em vez de um *Softmax* determinístico, os logits do Transformer são projetados num reservatório caótico de 2048 neurônios organizados numa topologia de **Hipercubo 11D** (cada neurônio tem exatamente 11 conexões de distância de Hamming 1). A saída é lida medindo a "tensão residual" da membrana (Leaky Integrate-and-Fire) usando temperatura estocástica.
 
+Nesta versão, a dinâmica SNN atingiu a Singularidade com três inovações:
+1. **Surrogate Gradients**: A função Heaviside (disparo duro) é contornada no *backward pass* do Zygote através da derivada de uma Sigmoide, permitindo o escoamento de Policy Gradient pelas voltagens.
+2. **PLIF + TSM (Temporal-wise Spiking Mechanism)**: O decaimento temporal e o nível de excitação da membrana são vetores treináveis (`tsm_gamma` e `decay_array`) ajustados a cada passo do tempo, ensinando a rede a encontrar o "ritmo e sotaque" da prosódia brasileira.
+3. **UniGRPO Value Head (Early Stopping Cognitivo)**: Uma rede MLP acoplada aos 2048 neurônios monitora a confiança interna a cada *timestep*. Se a certeza atingir 85% antes dos 30 passos, a decodificação sofre *Early Stopping*, gerando inferências ultrarrápidas em tokens óbvios e dedicando processamento completo aos cenários complexos (Difusão Discreta).
+
 ---
 
 ## Especificações do Motor
@@ -49,12 +56,12 @@ Em vez de um *Softmax* determinístico, os logits do Transformer são projetados
 | Item | Valor |
 |:-----|:------|
 | Parâmetros (Base) | ~22.5M (d_model=512, 12 heads, 6 layers) |
-| SNN Reservoir | 2048 LIF Neurons (11D Topology) |
-| Vocabulário | 65 caracteres/tokens isolados (Customizado para "balbucio") |
-| Tempo Cognitivo | 30 Timesteps (Simulação SNN para cada token) |
+| SNN Reservoir | 2048 PLIF Neurons (11D Topology) com Surrogate Gradients |
+| Value Head | UniGRPO Early Stopping Predictor (Cognitive Pulsing) |
+| Tempo Cognitivo | 30 Timesteps Dinâmicos (TSM Adaptativo) |
 | Treino Base | Cosine LR, Adam, Zygote autodiff, GPU/CPU |
-| Treino SNN (RLAIF)| Policy Gradient sobre o Readout Layer guiado pelo Ling 2.6 |
-| Monitoramento | W&B projeto `Lira-CAFUNE` |
+| Treino SNN (RLAIF)| Policy Gradient + MSE Loss sobre o Readout Layer e Value Head (Teacher: Ling 2.6) |
+| Monitoramento | W&B projeto `Lira-CAFUNE` nativo no Python |
 
 ---
 

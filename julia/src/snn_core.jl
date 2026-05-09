@@ -19,43 +19,66 @@ mas com memória de voltagem e disparo em Timesteps.
 mutable struct LIFCell
     W::Matrix{Float32}        # Pesos Sinápticos
     b::Vector{Float32}        # Viés (Threshold basal)
-    decay::Float32            # Fator Leaky (ex: 0.9 = guarda 90% da carga por passo)
+    decay_array::Vector{Float32} # TSM PLIF: Decay adaptativo por timestep
     V_thresh::Float32         # Voltagem necessária para o Disparo (Spike = 1)
+    tsm_gamma::Vector{Float32}# TSM: Parâmetro temporal treinável por timestep
 end
 
-@functor LIFCell (W, b) # Zygote rastreia apenas W e b para gradientes
+@functor LIFCell (W, b, decay_array, tsm_gamma) # Zygote rastreia tudo para gradientes
 
-function LIFCell(in_dim::Int, out_dim::Int; decay=0.9f0, V_thresh=1.0f0)
+function LIFCell(in_dim::Int, out_dim::Int; decay=0.9f0, V_thresh=1.0f0, timesteps=30)
     # Inicialização Xavier simplificada
     scale = Float32(sqrt(2.0 / (in_dim + out_dim)))
     W = randn(Float32, out_dim, in_dim) .* scale
     b = zeros(Float32, out_dim)
-    return LIFCell(W, b, Float32(decay), Float32(V_thresh))
+    decay_array = fill(Float32(decay), timesteps)
+    tsm_gamma = ones(Float32, timesteps) # Inicializa escala TSM como 1.0 (neutro)
+    return LIFCell(W, b, decay_array, Float32(V_thresh), tsm_gamma)
 end
 
 """
-    (cell::LIFCell)(v_prev, x)
+    heaviside_surrogate(v, thresh)
 
-Forward pass para um único TIMESTEP.
-v_prev: Voltagem residual do timestep anterior
-x: Sinal de entrada atual (spikes de outras camadas ou codificação de texto)
+Função Degrau com Gradiente Substituto (Surrogate Gradient).
+No Forward Pass, age como um Spike biológico duro (0 ou 1).
+No Backward Pass (Zygote), age como a derivada de uma curva Sigmoide suave.
+Isso permite que o erro (Reward) escorra pelo tempo (BPTT).
 """
-function (cell::LIFCell)(v_prev::AbstractMatrix, x::AbstractMatrix)
-    # 1. Integração Sináptica: V = V_anterior * Decay + (W * X + B)
-    # A entrada x excita a membrana neuronal
-    excitation = cell.W * x .+ cell.b
-    v_mem = (v_prev .* cell.decay) .+ excitation
+heaviside_surrogate(v, thresh) = Float32.(v .>= thresh)
+
+Zygote.@adjoint function heaviside_surrogate(v, thresh)
+    y = heaviside_surrogate(v, thresh)
+    function pullback(Δy)
+        # Derivada da função sigmoide: σ(x) = 1/(1+exp(-βx)) -> σ'(x) = β * σ(x) * (1 - σ(x))
+        # Ajustamos o beta (steepness) para controlar o quão largo é o "funil" do gradiente.
+        beta = 5.0f0
+        x = v .- thresh
+        sig = 1.0f0 ./ (1.0f0 .+ exp.(-beta .* x))
+        # O gradiente que flui para trás é a derivada pontual vezes o gradiente recebido (Δy)
+        grad_v = Δy .* beta .* sig .* (1.0f0 .- sig)
+        
+        return (grad_v, nothing) # nothing = gradiente do thresh não será treinado
+    end
+    return y, pullback
+end
+
+"""
+    (cell::LIFCell)(v_prev, x, t)
+
+Forward pass para um único TIMESTEP com arquitetura Pre-Spike Residual e TSM.
+"""
+function (cell::LIFCell)(v_prev::AbstractMatrix, x::AbstractMatrix, t::Int)
+    # 1. Integração Sináptica com Pre-Spike Residual e TSM
+    # A entrada analógica é escalonada pelo tsm_gamma atual para modular o ritmo
+    excitation = (cell.W * x .+ cell.b) .* cell.tsm_gamma[t]
+    v_mem = (v_prev .* cell.decay_array[t]) .+ excitation
     
-    # 2. Mecanismo de Disparo (Fire)
-    # Se a membrana passar do V_thresh, solta o Spike (1.0). Se não, fica em repouso (0.0).
-    # Função Heaviside step approximation para Zygote (Surrogate Gradient na FASE 3 se for treinar, por enquanto duro)
-    spikes = Float32.(v_mem .>= cell.V_thresh)
+    # 2. Mecanismo de Disparo (Fire) usando Surrogate Gradient
+    spikes = heaviside_surrogate(v_mem, cell.V_thresh)
     
-    # 3. Reset: Se o neurônio disparou, sua carga volta a 0 (período refratário)
-    # Soft reset ou Hard reset. Vamos usar Hard Reset.
+    # 3. Hard Reset: Zera a carga se disparou
     v_next = v_mem .* (1.0f0 .- spikes)
     
-    # Retorna a nova voltagem da membrana e os Spikes gerados
     return v_next, spikes
 end
 
@@ -118,9 +141,12 @@ mutable struct SpikingDecoder
     W_in::Matrix{Float32}     # Projeta de Vocab (65) -> Hypercube (2048)
     lif_res::LIFCell          # Reservatório 11D
     lif_out::LIFCell          # Readout Layer -> Vocab (65)
+    value_head::Any           # UniGRPO Value Head
     timesteps::Int
     vocab_size::Int
 end
+
+@functor SpikingDecoder (W_in, lif_res, lif_out, value_head)
 
 function SpikingDecoder(vocab_size::Int; timesteps=30, D=11)
     println("🌌 [SNN] Inicializando Topologia Hipercúbica $(D)D (Dimensões)")
@@ -134,13 +160,16 @@ function SpikingDecoder(vocab_size::Int; timesteps=30, D=11)
     
     # 2. LIF do Reservatório (Estrutura 11D Fixa)
     W_11D = build_hypercube_connectivity(D)
-    lif_res = LIFCell(N_res, N_res; decay=0.90f0, V_thresh=1.0f0)
+    lif_res = LIFCell(N_res, N_res; decay=0.90f0, V_thresh=1.0f0, timesteps=timesteps)
     lif_res.W .= W_11D # Ocupa os pesos com a geometria restrita 11D
     
     # 3. LIF de Saída (Readout linear SNN)
-    lif_out = LIFCell(N_res, vocab_size; decay=0.80f0, V_thresh=2.0f0)
+    lif_out = LIFCell(N_res, vocab_size; decay=0.80f0, V_thresh=2.0f0, timesteps=timesteps)
     
-    return SpikingDecoder(W_in, lif_res, lif_out, timesteps, vocab_size)
+    # 4. Value Head (UniGRPO) para Early Stopping pulsado
+    value_head = Chain(Dense(N_res, 128, gelu), Dense(128, 1, sigmoid))
+    
+    return SpikingDecoder(W_in, lif_res, lif_out, value_head, timesteps, vocab_size)
 end
 
 """
@@ -171,15 +200,21 @@ function (decoder::SpikingDecoder)(logits::AbstractVector)
         x_t_11D = decoder.W_in * x_t_vocab
         
         # 3. Dinâmica Caótica do Reservatório (A Magia 11D)
-        v_mem_res, spikes_res = decoder.lif_res(v_mem_res, x_t_11D)
+        v_mem_res, spikes_res = decoder.lif_res(v_mem_res, x_t_11D, t)
+        
+        # === VALUE HEAD (UniGRPO) ===
+        # Lê a Tensão do cérebro para prever se a confiança já está alta o suficiente
+        confidence = decoder.value_head(v_mem_res)[1]
         
         # 4. Readout Layer (tentar decodificar a resposta)
-        v_mem_out, spikes_out = decoder.lif_out(v_mem_out, spikes_res)
+        v_mem_out, spikes_out = decoder.lif_out(v_mem_out, spikes_res, t)
         
-        # Se a saída estourar o limite, decidimos o token!
-        if sum(spikes_out) > 0
+        # Early Stopping Cognitivo: Parada ultra-rápida!
+        if confidence >= 0.85f0 || sum(spikes_out) > 0
             active_ids = findall(vec(spikes_out) .> 0)
-            return rand(active_ids) # Sorteia se mais de 1 neurônio disparar ao mesmo tempo
+            if !isempty(active_ids)
+                return rand(active_ids), confidence # Retorna Token e Confiança
+            end
         end
     end
     
@@ -194,8 +229,8 @@ function (decoder::SpikingDecoder)(logits::AbstractVector)
     for (i, p) in enumerate(v_probs)
         acc += p
         if r <= acc
-            return i
+            return i, 0.0f0 # Fallback com confiança 0
         end
     end
-    return argmax(v_vec)
+    return argmax(v_vec), 0.0f0
 end

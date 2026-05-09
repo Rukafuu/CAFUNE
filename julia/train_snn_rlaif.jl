@@ -28,8 +28,16 @@ else
     snn_decoder = SpikingDecoder(65; timesteps=30, D=11)
 end
 
-# Apenas a camada Readout (lif_out) e a W_in serão treinadas. A 11D (lif_res) é FIXA.
-params_to_train = Flux.params(snn_decoder.W_in, snn_decoder.lif_out.W, snn_decoder.lif_out.b)
+# Apenas a camada Readout, as Matrizes de Entrada, o PLIF Decay e o Value Head serão treinados. A 11D (lif_res) W_11D é FIXA.
+params_to_train = Flux.params(
+    snn_decoder.W_in, 
+    snn_decoder.lif_res.decay_array,
+    snn_decoder.lif_out.decay_array,
+    snn_decoder.lif_out.W, 
+    snn_decoder.lif_out.b, 
+    snn_decoder.lif_out.tsm_gamma,
+    snn_decoder.value_head
+)
 optimizer = Flux.ADAM(0.005)
 
 # Prompts do "Berçário" para estimular a SNN a falar
@@ -94,8 +102,8 @@ for epoch in 1:epochs
             
             for step in 1:15
                 l_base = transformer(temp_input)[1:65, end]
-                # Passa pelo SNN 
-                nxt = snn_decoder(l_base)
+                # Passa pelo SNN (Pulsed Early Stopping)
+                nxt, conf = snn_decoder(l_base)
                 push!(output_tokens, nxt)
                 temp_input = vcat(temp_input[2:end], [nxt])
             end
@@ -149,10 +157,17 @@ for epoch in 1:epochs
                     v_res = zeros(Float32, N_res, 1)
                     v_out = zeros(Float32, snn_decoder.vocab_size, 1)
                     
+                    value_loss_accum = 0.0f0
+                    
                     for t in 1:snn_decoder.timesteps
                         x_11D = snn_decoder.W_in * pulse_train[t, :, :]
-                        v_res, _ = snn_decoder.lif_res(v_res, x_11D)
-                        v_out, _ = snn_decoder.lif_out(v_out, v_res) # Sem spikes duros aqui, usamos a voltagem (surrogate)
+                        v_res, _ = snn_decoder.lif_res(v_res, x_11D, t)
+                        
+                        # Pegar a Confiança Atual do Value Head para aquele Timestep
+                        confidence = snn_decoder.value_head(v_res)[1]
+                        value_loss_accum += (confidence - Float32(best_reward))^2
+                        
+                        v_out, _ = snn_decoder.lif_out(v_out, v_res, t) # Sem spikes duros aqui, usamos a voltagem (surrogate)
                     end
                     
                     # Policy Gradient Loss: CrossEntropy com a Voltagem Final da Membrana (v_out)
@@ -163,8 +178,9 @@ for epoch in 1:epochs
                     # Proteção log(0)
                     prob_target = clamp(v_softmax[target_token], 1e-7, 1.0)
                     
-                    # Loss Negativa = Recompensa
-                    loss += -Float32(best_reward) * log(prob_target)
+                    # Loss Híbrida = Recompensa Ponderada + Value Head MSE
+                    pg_loss = -Float32(best_reward) * log(prob_target)
+                    loss += pg_loss + 0.5f0 * (value_loss_accum / snn_decoder.timesteps)
                     
                     # Shift
                     temp_input = vcat(temp_input[2:end], [target_token])

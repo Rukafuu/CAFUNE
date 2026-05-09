@@ -84,8 +84,15 @@ function generate_neural_response(prompt::AbstractString; max_len=100)
         last_col = logits[1:65, end]
         
         # --- [SNN SAMPLING: Cognição Neuromórfica] ---
-        # O SNN converte a estatística em biologia
-        next_token = snn_decoder(last_col)
+        # O SNN converte a estatística em biologia e decide quando já tem confiança para disparar (Early Stopping)
+        next_token, conf = snn_decoder(last_col)
+        
+        char_preview = get(id2char, next_token - 1, "")
+        if conf >= 0.85f0
+            println(" ⚡ Estalo Cognitivo (Early Stopping)! Token: '$(char_preview)' | Confiança: $(round(conf * 100, digits=2))%")
+        else
+            println(" ⏳ Reflexão 11D Completa. Token: '$(char_preview)' | Confiança final: $(round(conf * 100, digits=2))%")
+        end
         
         push!(output_tokens, next_token)
         curr_input = vcat(curr_input[2:end], [next_token])

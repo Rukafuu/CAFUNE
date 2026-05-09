@@ -1,7 +1,7 @@
-import requests
-import json
 import sys
 import re
+import os
+import wandb
 
 import os
 
@@ -70,6 +70,14 @@ if __name__ == "__main__":
     prompt = sys.argv[1]
     response = sys.argv[2]
     
+    # Inicia/Resume a Run no Weights & Biases
+    wandb.init(project="Lira-CAFUNE", name="SNN-RLAIF-11D", id="snn_rlaif_run_01", resume="allow", reinit=True)
+    
     reward_score = evaluate_response(prompt, response)
+    
+    # Loga a métrica e finaliza
+    wandb.log({"RLAIF_Reward": reward_score, "Generated_Text": response})
+    wandb.finish(quiet=True)
+    
     # Apenas o print limpo da nota para o Julia conseguir ler facilmente
     print(reward_score)
