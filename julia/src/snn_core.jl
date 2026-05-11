@@ -22,18 +22,20 @@ mutable struct LIFCell
     decay_array::Vector{Float32} # TSM PLIF: Decay adaptativo por timestep
     V_thresh::Float32         # Voltagem necessária para o Disparo (Spike = 1)
     tsm_gamma::Vector{Float32}# TSM: Parâmetro temporal treinável por timestep
+    sfa_decay::Float32        # SFA: Taxa de decaimento da adaptação (ex: 0.9)
+    sfa_inc::Float32          # SFA: Incremento da adaptação por spike (ex: 0.05)
 end
 
 @functor LIFCell (W, b, decay_array, tsm_gamma) # Zygote rastreia tudo para gradientes
 
-function LIFCell(in_dim::Int, out_dim::Int; decay=0.9f0, V_thresh=1.0f0, timesteps=30)
+function LIFCell(in_dim::Int, out_dim::Int; decay=0.9f0, V_thresh=1.0f0, timesteps=30, sfa_decay=0.9f0, sfa_inc=0.1f0)
     # Inicialização Xavier simplificada
     scale = Float32(sqrt(2.0 / (in_dim + out_dim)))
     W = randn(Float32, out_dim, in_dim) .* scale
     b = zeros(Float32, out_dim)
     decay_array = fill(Float32(decay), timesteps)
     tsm_gamma = ones(Float32, timesteps) # Inicializa escala TSM como 1.0 (neutro)
-    return LIFCell(W, b, decay_array, Float32(V_thresh), tsm_gamma)
+    return LIFCell(W, b, decay_array, Float32(V_thresh), tsm_gamma, Float32(sfa_decay), Float32(sfa_inc))
 end
 
 """
@@ -63,23 +65,28 @@ Zygote.@adjoint function heaviside_surrogate(v, thresh)
 end
 
 """
-    (cell::LIFCell)(v_prev, x, t)
+    (cell::LIFCell)(v_prev, w_prev, x, t)
 
-Forward pass para um único TIMESTEP com arquitetura Pre-Spike Residual e TSM.
+Forward pass para um único TIMESTEP com Spike Frequency Adaptation (SFA).
+w_prev: Estado da adaptação (corrente de hiperpolarização).
 """
-function (cell::LIFCell)(v_prev::AbstractMatrix, x::AbstractMatrix, t::Int)
-    # 1. Integração Sináptica com Pre-Spike Residual e TSM
-    # A entrada analógica é escalonada pelo tsm_gamma atual para modular o ritmo
+function (cell::LIFCell)(v_prev::AbstractMatrix, w_prev::AbstractMatrix, x::AbstractMatrix, t::Int)
+    # 1. Integração Sináptica com TSM e SFA
+    # A corrente de adaptação w_prev subtrai da voltagem (efeito inibitório pós-disparo)
     excitation = (cell.W * x .+ cell.b) .* cell.tsm_gamma[t]
-    v_mem = (v_prev .* cell.decay_array[t]) .+ excitation
+    v_mem = (v_prev .* cell.decay_array[t]) .+ excitation .- w_prev
     
     # 2. Mecanismo de Disparo (Fire) usando Surrogate Gradient
     spikes = heaviside_surrogate(v_mem, cell.V_thresh)
     
-    # 3. Hard Reset: Zera a carga se disparou
+    # 3. Atualização do estado de Adaptação (SFA)
+    # Decai o estado anterior e incrementa se houver disparo
+    w_next = (w_prev .* cell.sfa_decay) .+ (spikes .* cell.sfa_inc)
+    
+    # 4. Hard Reset: Zera a carga se disparou
     v_next = v_mem .* (1.0f0 .- spikes)
     
-    return v_next, spikes
+    return v_next, w_next, spikes
 end
 
 # ============================================================
@@ -189,7 +196,10 @@ function (decoder::SpikingDecoder)(logits::AbstractVector)
     # Estados de Memória Iniciais
     N_res = size(decoder.lif_res.W, 1)
     v_mem_res = zeros(Float32, N_res, 1)
+    w_sfa_res = zeros(Float32, N_res, 1) # Estado SFA do reservatório
+    
     v_mem_out = zeros(Float32, decoder.vocab_size, 1)
+    w_sfa_out = zeros(Float32, decoder.vocab_size, 1) # Estado SFA da saída
     
     # O Tempo passa no Universo 11D...
     for t in 1:decoder.timesteps
@@ -199,15 +209,15 @@ function (decoder::SpikingDecoder)(logits::AbstractVector)
         # 2. Projetar o pulso para o espaço 11D (excitar o reservatório)
         x_t_11D = decoder.W_in * x_t_vocab
         
-        # 3. Dinâmica Caótica do Reservatório (A Magia 11D)
-        v_mem_res, spikes_res = decoder.lif_res(v_mem_res, x_t_11D, t)
+        # 3. Dinâmica Caótica do Reservatório com SFA (A Magia 11D)
+        v_mem_res, w_sfa_res, spikes_res = decoder.lif_res(v_mem_res, w_sfa_res, x_t_11D, t)
         
         # === VALUE HEAD (UniGRPO) ===
         # Lê a Tensão do cérebro para prever se a confiança já está alta o suficiente
         confidence = decoder.value_head(v_mem_res)[1]
         
-        # 4. Readout Layer (tentar decodificar a resposta)
-        v_mem_out, spikes_out = decoder.lif_out(v_mem_out, spikes_res, t)
+        # 4. Readout Layer com SFA (tentar decodificar a resposta)
+        v_mem_out, w_sfa_out, spikes_out = decoder.lif_out(v_mem_out, w_sfa_out, spikes_res, t)
         
         # Early Stopping Cognitivo: Parada ultra-rápida!
         if confidence >= 0.85f0 || sum(spikes_out) > 0

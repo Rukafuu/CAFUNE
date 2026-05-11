@@ -149,6 +149,48 @@ GELU activation — usado em GPT/BERT, mais suave que ReLU.
 """
 gelu(x) = x .* 0.5f0 .* (1f0 .+ tanh.(sqrt(2f0/π) .* (x .+ 0.044715f0 .* x.^3)))
 
+# ──────────────────────────────────────────────────────────────
+#  RoPE: Rotary Positional Embeddings
+# ──────────────────────────────────────────────────────────────
+
+"""
+    apply_rope(x, cos_pos, sin_pos)
+
+Aplica rotação rotacional (RoPE) em x. 
+x: (d_head, seq_len) ou (d_head, seq_len, batch)
+"""
+function apply_rope(x::AbstractMatrix{Float32}, cos_pos::Matrix{Float32}, sin_pos::Matrix{Float32})
+    d_head, seq_len = size(x)
+    half = d_head ÷ 2
+    
+    # x_left: (half, seq_len), x_right: (half, seq_len)
+    x_left = x[1:half, :]
+    x_right = x[half+1:end, :]
+    
+    # Rotação: [x1*cos - x2*sin, x1*sin + x2*cos]
+    out_left = x_left .* cos_pos .- x_right .* sin_pos
+    out_right = x_left .* sin_pos .+ x_right .* cos_pos
+    
+    return vcat(out_left, out_right)
+end
+
+"""
+    precompute_rope(seq_len, d_head) → (cos, sin)
+
+Pre-calcula as tabelas de cosseno e seno para o RoPE.
+"""
+function precompute_rope(seq_len::Int, d_head::Int)
+    half = d_head ÷ 2
+    # Frequências: base 10000 como no Llama
+    inv_freq = 1.0f0 ./ (10000.0f0 .^ (Float32.(0:2:half-1) ./ d_head))
+    
+    t = Float32.(0:seq_len-1)
+    # outer product: (half, seq_len)
+    freqs = inv_freq .* t'
+    
+    return cos.(freqs), sin.(freqs)
+end
+
 # ============================================================
 #  Multi-Head Self-Attention (BIDIRECIONAL)
 # ============================================================
@@ -190,38 +232,103 @@ function (mha::MultiHeadAttention)(x::Matrix{Float32})
     d_head = mha.d_head
     scale = Float32(1.0 / sqrt(d_head))
 
+    # Pre-computar RoPE para o comprimento atual
+    cos_pos, sin_pos = precompute_rope(seq_len, d_head)
+
     # Projeções Q, K, V: (d_model, seq_len)
     Q = mha.Wq * x
     K = mha.Wk * x
     V = mha.Wv * x
 
     # Multi-head split: (d_head, n_heads, seq_len)
-    # O Julia eh Column-Major, entao queremos a dimensao de seq_len por ultimo para eficiencia
     Q_mh = reshape(Q, d_head, n_heads, seq_len)
     K_mh = reshape(K, d_head, n_heads, seq_len)
     V_mh = reshape(V, d_head, n_heads, seq_len)
 
-    # Attention: (seq_len, seq_len, n_heads)
-    # Para cada head: Q' * K
-    # Usamos permutedims para alinhar para a multiplicacao de matrizes em batch
-    # Q_p: (d_head, seq_len, n_heads)
-    Q_p = permutedims(Q_mh, (1, 3, 2))
-    K_p = permutedims(K_mh, (1, 3, 2))
-    V_p = permutedims(V_mh, (1, 3, 2))
+    # Aplicar RoPE em cada cabeça
+    # Zygote-friendly: Usando stack/comprehension
+    Q_rope = stack([apply_rope(Q_mh[:, h, :], cos_pos, sin_pos) for h in 1:n_heads]) # (d_head, seq_len, n_heads)
+    K_rope = stack([apply_rope(K_mh[:, h, :], cos_pos, sin_pos) for h in 1:n_heads]) # (d_head, seq_len, n_heads)
+    V_p = permutedims(V_mh, (1, 3, 2)) # (d_head, seq_len, n_heads)
 
-    # Scores de atenção: (seq_len, seq_len, n_heads)
-    # Zygote-friendly: Evitando mutação com array comprehension
-    heads = [softmax(scale .* (K_p[:, :, h]' * Q_p[:, :, h]), dims=1) for h in 1:n_heads]
+    # Attention scores
+    heads = [softmax(scale .* (K_rope[:, :, h]' * Q_rope[:, :, h]), dims=1) for h in 1:n_heads]
     
-    # V_p: (d_head, seq_len, n_heads)
-    # heads[h]: (seq_len, seq_len)
-    # out_heads: (d_head, seq_len)
     out_heads = [V_p[:, :, h] * heads[h] for h in 1:n_heads]
     
-    # Concatenar: (d_model, seq_len)
     output_concat = reduce(vcat, out_heads)
-    
     return mha.Wo * output_concat
+end
+
+# ============================================================
+#  Spiking Synchrony Attention (SSA) - Estilo Isla-SNN
+# ============================================================
+
+"""
+    SpikingSynchronyAttention
+
+Atenção por Sincronia de Disparo. Em vez de Dot-Product, usa a proximidade 
+temporal/espacial em um hipercubo unitário via Kernel RBF.
+"""
+mutable struct SpikingSynchronyAttention
+    W_proj::Matrix{Float32} # Projeta para o Hipercubo [0, 1]^d
+    Wv::Matrix{Float32}
+    Wo::Matrix{Float32}
+    tau::Float32           # Temperatura do Kernel (RBF precision)
+    n_heads::Int
+    d_head::Int
+end
+
+@functor SpikingSynchronyAttention (W_proj, Wv, Wo)
+
+function SpikingSynchronyAttention(d_model::Int, n_heads::Int; tau=0.5f0)
+    d_head = d_model ÷ n_heads
+    scale = Float32(sqrt(d_model))
+    return SpikingSynchronyAttention(
+        randn(Float32, d_model, d_model) ./ scale,
+        randn(Float32, d_model, d_model) ./ scale,
+        randn(Float32, d_model, d_model) ./ scale,
+        Float32(tau),
+        n_heads,
+        d_head
+    )
+end
+
+function (ssa::SpikingSynchronyAttention)(x::Matrix{Float32})
+    d_model, seq_len = size(x)
+    n_heads = ssa.n_heads
+    d_head = ssa.d_head
+
+    # Pre-computar RoPE para sincronia
+    cos_pos, sin_pos = precompute_rope(seq_len, d_head)
+
+    # 1. Projeção para o Hipercubo Unitário (Baseado no Isla-SNN)
+    P = Flux.sigmoid.(ssa.W_proj * x) # (d_model, seq_len)
+    V = ssa.Wv * x
+
+    # Multi-head split
+    P_mh = reshape(P, d_head, n_heads, seq_len)
+    V_mh = reshape(V, d_head, n_heads, seq_len)
+
+    # Aplicar RoPE na projeção hipercúbica (faz a fase rotacionar no tempo)
+    P_rope = stack([apply_rope(P_mh[:, h, :], cos_pos, sin_pos) for h in 1:n_heads]) # (d_head, seq_len, n_heads)
+    V_p = permutedims(V_mh, (1, 3, 2))
+
+    # 2. Kernel de Sincronia (RBF)
+    out_heads = []
+    for h in 1:n_heads
+        Ph = P_rope[:, :, h] 
+        Vh = V_p[:, :, h] 
+        
+        # Distância no espaço rotacionado (Atenção por Sincronia de Fase)
+        dist_sq = sum(Ph.^2, dims=1)' .+ sum(Ph.^2, dims=1) .- 2 .* (Ph' * Ph)
+        attn = exp.(-dist_sq ./ (2 * ssa.tau^2))
+        attn_norm = attn ./ (sum(attn, dims=1) .+ 1f-6)
+        push!(out_heads, Vh * attn_norm)
+    end
+    
+    output_concat = reduce(vcat, out_heads)
+    return ssa.Wo * output_concat
 end
 
 
@@ -300,6 +407,43 @@ function (block::TransformerBlock)(x::Matrix{Float32})
     return x
 end
 
+# ──────────────────────────────────────────────────────────────
+#  Spiking Transformer Block
+# ──────────────────────────────────────────────────────────────
+
+"""
+    SpikingTransformerBlock
+
+Bloco que usa Spiking Synchrony Attention em vez de Dot-Product.
+"""
+mutable struct SpikingTransformerBlock
+    attn::SpikingSynchronyAttention
+    ffn::FFN
+    norm1_γ::Vector{Float32}
+    norm1_β::Vector{Float32}
+    norm2_γ::Vector{Float32}
+    norm2_β::Vector{Float32}
+end
+
+@functor SpikingTransformerBlock
+
+function SpikingTransformerBlock(d_model::Int, n_heads::Int, d_ff::Int)
+    return SpikingTransformerBlock(
+        SpikingSynchronyAttention(d_model, n_heads),
+        FFN(d_model, d_ff),
+        ones(Float32, d_model),
+        zeros(Float32, d_model),
+        ones(Float32, d_model),
+        zeros(Float32, d_model)
+    )
+end
+
+function (block::SpikingTransformerBlock)(x::Matrix{Float32})
+    x = x + block.attn(layer_norm(x, block.norm1_γ, block.norm1_β))
+    x = x + block.ffn(layer_norm(x, block.norm2_γ, block.norm2_β))
+    return x
+end
+
 # ============================================================
 #  Positional Embedding (Sinusoidal)
 # ============================================================
@@ -344,7 +488,7 @@ o modelo prevê tudo — isso é necessário para a inferência iterativa.
 """
 mutable struct BidirectionalTransformer
     token_emb::Matrix{Float32}    # (d_model, vocab_size)
-    blocks::Vector{TransformerBlock}
+    blocks::Vector{Any}           # Mix de TransformerBlock e SpikingTransformerBlock
     norm_final_γ::Vector{Float32}
     norm_final_β::Vector{Float32}
     lm_head::Matrix{Float32}      # (vocab_size, d_model) — prediz logits
@@ -358,8 +502,17 @@ function BidirectionalTransformer(config::TransformerConfig)
 
     token_emb = randn(Float32, config.d_model, config.vocab_size) .* scale
 
-    blocks = [TransformerBlock(config.d_model, config.n_heads, config.d_ff)
-              for _ in 1:config.n_layers]
+    # Criamos uma arquitetura híbrida: 
+    # Primeiras camadas: Atenção Padrão (Silício) para extração de features
+    # Últimas camadas: Spiking Synchrony Attention (Neuromórfico) para síntese
+    blocks = []
+    for l in 1:config.n_layers
+        if l <= config.n_layers ÷ 2
+            push!(blocks, TransformerBlock(config.d_model, config.n_heads, config.d_ff))
+        else
+            push!(blocks, SpikingTransformerBlock(config.d_model, config.n_heads, config.d_ff))
+        end
+    end
 
     return BidirectionalTransformer(
         token_emb,
@@ -397,9 +550,8 @@ function (model::BidirectionalTransformer)(tokens::Vector{Int})
     # 1. Token Embedding
     x = model.token_emb[:, tokens]   # (d_model, seq_len)
 
-    # 2. Positional Embedding (somado ao token embedding)
-    pe = sinusoidal_embedding(seq_len, d_model)
-    x = x .+ pe
+    # 2. Positional Embedding (RoPE é aplicado dentro dos blocos de atenção agora)
+    # Removemos o sinusoidal aditivo para usar a rotação dinâmica.
 
     # 3. Passar pelos transformer blocks
     for block in model.blocks

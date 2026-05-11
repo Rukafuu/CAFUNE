@@ -134,7 +134,8 @@ for epoch in 1:epochs
         
         # 4. Atualização Sináptica (Policy Gradient na SNN)
         # Vamos recompensar o caminho de tensores que gerou a melhor variação
-        if best_reward > 0.2
+        # Abaixamos o limiar para 0.05 para não barrar o balbucio inicial (Nota 0.1)
+        if best_reward >= 0.05
             println("   💡 Reforçando SNN para a resposta Vencedora com Loss multiplicada por -$best_reward")
             
             grads = Flux.gradient(params_to_train) do

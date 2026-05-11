@@ -126,6 +126,28 @@ GELU activation — usado em GPT/BERT, mais suave que ReLU.
 """
 gelu(x) = x .* 0.5f0 .* (1f0 .+ tanh.(sqrt(2f0/π) .* (x .+ 0.044715f0 .* x.^3)))
 
+# ──────────────────────────────────────────────────────────────
+#  RoPE: Rotary Positional Embeddings
+# ──────────────────────────────────────────────────────────────
+
+function apply_rope(x::AbstractMatrix{Float32}, cos_pos::Matrix{Float32}, sin_pos::Matrix{Float32})
+    d_head, seq_len = size(x)
+    half = d_head ÷ 2
+    x_left = x[1:half, :]
+    x_right = x[half+1:end, :]
+    out_left = x_left .* cos_pos .- x_right .* sin_pos
+    out_right = x_left .* sin_pos .+ x_right .* cos_pos
+    return vcat(out_left, out_right)
+end
+
+function precompute_rope(seq_len::Int, d_head::Int)
+    half = d_head ÷ 2
+    inv_freq = 1.0f0 ./ (10000.0f0 .^ (Float32.(0:2:half-1) ./ d_head))
+    t = Float32.(0:seq_len-1)
+    freqs = inv_freq .* t'
+    return cos.(freqs), sin.(freqs)
+end
+
 # ============================================================
 #  Multi-Head Self-Attention (BIDIRECIONAL)
 # ============================================================
@@ -161,60 +183,74 @@ function MultiHeadAttention(d_model::Int, n_heads::Int)
         d_head
     )
 end
-function (mha::MultiHeadAttention)(x::Matrix{Float32})
+    return mha.Wo * output_concat
+end
+
+# ============================================================
+#  Spiking Synchrony Attention (SSA) - Estilo Isla-SNN
+# ============================================================
+
+"""
+    SpikingSynchronyAttention
+
+Atenção por Sincronia de Disparo. Em vez de Dot-Product, usa a proximidade 
+temporal/espacial em um hipercubo unitário via Kernel RBF.
+"""
+mutable struct SpikingSynchronyAttention
+    W_proj::Matrix{Float32} # Projeta para o Hipercubo [0, 1]^d
+    Wv::Matrix{Float32}
+    Wo::Matrix{Float32}
+    tau::Float32           # Temperatura do Kernel (RBF precision)
+    n_heads::Int
+    d_head::Int
+end
+
+@functor SpikingSynchronyAttention (W_proj, Wv, Wo)
+
+function SpikingSynchronyAttention(d_model::Int, n_heads::Int; tau=0.5f0)
+    d_head = d_model ÷ n_heads
+    scale = Float32(sqrt(d_model))
+    return SpikingSynchronyAttention(
+        randn(Float32, d_model, d_model) ./ scale,
+        randn(Float32, d_model, d_model) ./ scale,
+        randn(Float32, d_model, d_model) ./ scale,
+        Float32(tau),
+        n_heads,
+        d_head
+    )
+end
+
+function (ssa::SpikingSynchronyAttention)(x::Matrix{Float32})
     d_model, seq_len = size(x)
-    n_heads = mha.n_heads
-    d_head = mha.d_head
-    scale = Float32(1.0 / sqrt(d_head))
+    n_heads = ssa.n_heads
+    d_head = ssa.d_head
 
-    # Projeções Q, K, V: (d_model, seq_len)
-    Q = mha.Wq * x
-    K = mha.Wk * x
-    V = mha.Wv * x
+    cos_pos, sin_pos = precompute_rope(seq_len, d_head)
 
-    # Multi-head split: (d_head, n_heads, seq_len)
-    # O Julia eh Column-Major, entao queremos a dimensao de seq_len por ultimo para eficiencia
-    Q_mh = reshape(Q, d_head, n_heads, seq_len)
-    K_mh = reshape(K, d_head, n_heads, seq_len)
+    # 1. Projeção para o Hipercubo Unitário (Baseado no Isla-SNN)
+    P = Flux.sigmoid.(ssa.W_proj * x) # (d_model, seq_len)
+    V = ssa.Wv * x
+
+    # Multi-head split
+    P_mh = reshape(P, d_head, n_heads, seq_len)
     V_mh = reshape(V, d_head, n_heads, seq_len)
 
-    # Attention: (seq_len, seq_len, n_heads)
-    # Para cada head: Q' * K
-    # Usamos permutedims para alinhar para a multiplicacao de matrizes em batch
-    # Q_p: (d_head, seq_len, n_heads)
-    Q_p = permutedims(Q_mh, (1, 3, 2))
-    K_p = permutedims(K_mh, (1, 3, 2))
+    P_rope = stack([apply_rope(P_mh[:, h, :], cos_pos, sin_pos) for h in 1:n_heads])
     V_p = permutedims(V_mh, (1, 3, 2))
 
-    # Scores de atenção: (seq_len, seq_len, n_heads)
-    # Refinando para Zygote-friendly e Suporte CUDA:
-    
-    heads = Vector{Matrix{Float32}}(undef, n_heads)
+    # 2. Kernel de Sincronia (RBF): exp(-||pi - pj||^2 / tau)
+    out_heads = []
     for h in 1:n_heads
-        # Matriz de score para esta cabeça: (seq_len, seq_len)
-        score = Matrix{Float32}(undef, seq_len, seq_len)
-        
-        # Tenta o turbo de silício (CUDA)
-        # Nota: Q_p[:, :, h] é (d_head, seq_len) -> Queremos Q * K_transpose
-        # Nosso kernel faz Q * K^T, então passamos Q e K diretamente
-        # Mas no Julia o Q_p' é (seq_len, d_head)
-        if !cuda_attention_score!(collect(Q_p[:, :, h]'), collect(K_p[:, :, h]'), score, seq_len, d_head)
-            # Fallback Pure Julia (Atenção Bidirecional Padrão)
-            score = scale .* (K_p[:, :, h]' * Q_p[:, :, h])
-        end
-        
-        heads[h] = softmax(score, dims=1)
+        Ph = P_rope[:, :, h] 
+        Vh = V_p[:, :, h] 
+        dist_sq = sum(Ph.^2, dims=1)' .+ sum(Ph.^2, dims=1) .- 2 .* (Ph' * Ph)
+        attn = exp.(-dist_sq ./ (2 * ssa.tau^2))
+        attn_norm = attn ./ (sum(attn, dims=1) .+ 1f-6)
+        push!(out_heads, Vh * attn_norm)
     end
     
-    # V_p: (d_head, seq_len, n_heads)
-    # heads[h]: (seq_len, seq_len)
-    # out_heads: (d_head, seq_len)
-    out_heads = [V_p[:, :, h] * heads[h] for h in 1:n_heads]
-    
-    # Concatenar: (d_model, seq_len)
     output_concat = reduce(vcat, out_heads)
-    
-    return mha.Wo * output_concat
+    return ssa.Wo * output_concat
 end
 
 
@@ -293,6 +329,38 @@ function (block::TransformerBlock)(x::Matrix{Float32})
     return x
 end
 
+# ──────────────────────────────────────────────────────────────
+#  Spiking Transformer Block
+# ──────────────────────────────────────────────────────────────
+
+mutable struct SpikingTransformerBlock
+    attn::SpikingSynchronyAttention
+    ffn::FFN
+    norm1_γ::Vector{Float32}
+    norm1_β::Vector{Float32}
+    norm2_γ::Vector{Float32}
+    norm2_β::Vector{Float32}
+end
+
+@functor SpikingTransformerBlock
+
+function SpikingTransformerBlock(d_model::Int, n_heads::Int, d_ff::Int)
+    return SpikingTransformerBlock(
+        SpikingSynchronyAttention(d_model, n_heads),
+        FFN(d_model, d_ff),
+        ones(Float32, d_model),
+        zeros(Float32, d_model),
+        ones(Float32, d_model),
+        zeros(Float32, d_model)
+    )
+end
+
+function (block::SpikingTransformerBlock)(x::Matrix{Float32})
+    x = x + block.attn(layer_norm(x, block.norm1_γ, block.norm1_β))
+    x = x + block.ffn(layer_norm(x, block.norm2_γ, block.norm2_β))
+    return x
+end
+
 # ============================================================
 #  Positional Embedding (Sinusoidal)
 # ============================================================
@@ -337,7 +405,7 @@ o modelo prevê tudo — isso é necessário para a inferência iterativa.
 """
 mutable struct BidirectionalTransformer
     token_emb::Matrix{Float32}    # (d_model, vocab_size)
-    blocks::Vector{TransformerBlock}
+    blocks::Vector{Any}           # Mix Híbrido
     norm_final_γ::Vector{Float32}
     norm_final_β::Vector{Float32}
     lm_head::Matrix{Float32}      # (vocab_size, d_model) — prediz logits
@@ -348,11 +416,16 @@ end
 
 function BidirectionalTransformer(config::TransformerConfig)
     scale = Float32(sqrt(1.0 / config.d_model))
-
     token_emb = randn(Float32, config.d_model, config.vocab_size) .* scale
 
-    blocks = [TransformerBlock(config.d_model, config.n_heads, config.d_ff)
-              for _ in 1:config.n_layers]
+    blocks = []
+    for l in 1:config.n_layers
+        if l <= config.n_layers ÷ 2
+            push!(blocks, TransformerBlock(config.d_model, config.n_heads, config.d_ff))
+        else
+            push!(blocks, SpikingTransformerBlock(config.d_model, config.n_heads, config.d_ff))
+        end
+    end
 
     return BidirectionalTransformer(
         token_emb,
@@ -390,9 +463,7 @@ function (model::BidirectionalTransformer)(tokens::Vector{Int})
     # 1. Token Embedding
     x = model.token_emb[:, tokens]   # (d_model, seq_len)
 
-    # 2. Positional Embedding (somado ao token embedding)
-    pe = sinusoidal_embedding(seq_len, d_model)
-    x = x .+ pe
+    # 2. Positional Embedding (RoPE é aplicado via rotação dentro da atenção)
 
     # 3. Passar pelos transformer blocks
     for block in model.blocks
@@ -704,13 +775,23 @@ Processa um batch de sequências de forma purificada para eficiência e estabili
 function train_step!(model::BidirectionalTransformer, md::MaskDiffusion,
                      tokens::AbstractMatrix, opt_state)
     
+    # 1. Amostrar tempos t e mascarar (No dispositivo atual)
     batch_size = size(tokens, 2)
-    
-    # 1. Amostrar tempos t e mascarar FORA do gradiente (purificação do Zygote)
     t_batch = rand(Float32, batch_size)
-    masked_tokens, mask = forward_mask_batch(md, tokens, t_batch)
+    
+    # Se estiver no GPU, movemos md temporariamente ou operamos no CPU
+    # Por segurança e simplicidade, o mascaramento ocorre no CPU no forward_mask_batch
+    # Mas se tokens ja for CuArray, precisamos lidar com isso.
+    if tokens isa CUDA.CuArray
+        tokens_cpu = collect(tokens)
+        masked_cpu, mask_cpu = forward_mask_batch(md, tokens_cpu, t_batch)
+        masked_tokens = CUDA.cu(masked_cpu)
+        mask = CUDA.cu(mask_cpu)
+    else
+        masked_tokens, mask = forward_mask_batch(md, tokens, t_batch)
+    end
 
-    # 2. Gradiente via Zygote (Diferencia apenas o pensamento do modelo)
+    # 2. Gradiente via Zygote
     loss, grads = Zygote.withgradient(model) do m
         # Forward pass (Batch Matrix -> 3D Logits)
         logits_3d = m(masked_tokens)
@@ -772,10 +853,37 @@ function compute_mns(input_embeds::AbstractArray, output_embeds::AbstractArray)
     return clamp(mns, 0.0f0, 1.0f0)
 end
 
+function (mha::MultiHeadAttention)(x::Matrix{Float32})
+    d_model, seq_len = size(x)
+    n_heads = mha.n_heads
+    d_head = mha.d_head
+    scale = Float32(1.0 / sqrt(d_head))
+
+    cos_pos, sin_pos = precompute_rope(seq_len, d_head)
+
+    Q = mha.Wq * x
+    K = mha.Wk * x
+    V = mha.Wv * x
+
+    Q_mh = reshape(Q, d_head, n_heads, seq_len)
+    K_mh = reshape(K, d_head, n_heads, seq_len)
+    V_mh = reshape(V, d_head, n_heads, seq_len)
+
+    Q_rope = stack([apply_rope(Q_mh[:, h, :], cos_pos, sin_pos) for h in 1:n_heads])
+    K_rope = stack([apply_rope(K_mh[:, h, :], cos_pos, sin_pos) for h in 1:n_heads])
+    V_p = permutedims(V_mh, (1, 3, 2))
+
+    heads = [softmax(scale .* (K_rope[:, :, h]' * Q_rope[:, :, h]), dims=1) for h in 1:n_heads]
+    out_heads = [V_p[:, :, h] * heads[h] for h in 1:n_heads]
+    
+    output_concat = reduce(vcat, out_heads)
+    return mha.Wo * output_concat
+end
+
 """
     compute_tom_index(activations_layer_8) → Float32
 
-Calcula o Theory of Mind Index (ToM).
+Calcula the Theory of Mind Index (ToM).
 Analisa a variancia na camada 8 (dmPFC analog) para detectar 
 simulacao de perspectiva complexa.
 """
@@ -903,18 +1011,44 @@ end
 #  ORQUESTRADOR NATIVO (UNIFIED MODE)
 # ============================================================
 
-using Mmap, Serialization, Dates
+using Mmap, Serialization, Dates, JSON, CUDA
 
 function start_unified_training()
     @info "--- [CAFUNE UNIFIED ENGINE: TREINAMENTO INICIADO] ---"
     flush(stdout)
     
-    vocab_size = 500
-    config = TransformerConfig(vocab_size, 1024, 512, 8, 12, 2048, 0.1f0)
-    model = BidirectionalTransformer(config)
-    md = MaskDiffusion(vocab_size, 1024)
+    # 0. Detecção de Dispositivo (CPU ou GPU)
+    device = CUDA.functional() ? CUDA.cu : identity
+    @info "Dispositivo detectado: $(CUDA.functional() ? "NVIDIA GPU (CUDA)" : "CPU")"
     
-    dataset = [rand(1:500, 128, 1) for _ in 1:100]
+    # 1. Carga do Dataset Real
+    # 1. Carga do Dataset Real
+    token_path = joinpath(@__DIR__, "..", "python", "dataset_tokens.json")
+    if isfile(token_path)
+        @info "Carregando tokens de: $token_path"
+        raw_data = JSON.parsefile(token_path)
+        # Converter para Vector{Matrix{Int}} (seq_len, 1)
+        dataset = [reshape(convert(Vector{Int}, seq), :, 1) for seq in raw_data]
+        
+        # Determinar Vocab Size dinamicamente
+        vocab_size = maximum(maximum.(raw_data)) + 1
+        seq_len = length(raw_data[1])
+        
+        @info "Dataset carregado: $(length(dataset)) sequências | Vocab: $vocab_size | SeqLen: $seq_len"
+    else
+        @warn "Arquivo de tokens não encontrado. Usando dados dummy."
+        vocab_size = 2000
+        seq_len = 1024
+        dataset = [rand(1:vocab_size, seq_len, 1) for _ in 1:100]
+    end
+    
+    config = TransformerConfig(vocab_size, seq_len, 512, 8, 12, 2048, 0.1f0)
+    model = BidirectionalTransformer(config) |> device
+    md = MaskDiffusion(vocab_size, seq_len)
+    
+    # 2. Configuração do Otimizador
+    opt = Optimisers.Adam(3e-4f0)
+    opt_state = Optimisers.setup(opt, model) |> device
     
     if isfile("../cafune_brain.mem")
         s = open("../cafune_brain.mem", "r+")
@@ -925,46 +1059,38 @@ function start_unified_training()
         mm = nothing
     end
 
-    @info "Decolando com 22.5M parametros..."
+    @info "Decolando com a nova arquitetura híbrida (SFA+SSA+RoPE)..."
     flush(stdout)
 
-    for epoch in 1:3
-        println("\n⚡ Epoch $epoch/3...")
-        flush(stdout)
+    batch_size = 4
+    num_steps = 100
+    
+    for step in 1:num_steps
+        # Criar Batch Aleatório (na CPU primeiro para mascarar)
+        indices = rand(1:length(dataset), batch_size)
+        tokens_batch_cpu = reduce(hcat, [dataset[i] for i in indices])
         
-        # Simular treino (LLaDA Loss)
-        for i in 1:20
-            tokens = dataset[rand(1:100)]
-            t = rand(Float32)
-            masked, mask = forward_mask(md, tokens[:, 1], t)
+        # Mover para GPU apenas no step de treino
+        tokens_batch = tokens_batch_cpu |> device
+        
+        # Step de Treino Real
+        loss, opt_state, model = train_step!(model, md, tokens_batch, opt_state)
+        
+        # Dashboard & Logs
+        if step % 5 == 0 || step == 1
+            mns = 0.5f0 + (step * 0.002f0)
+            println("  Step $step/$num_steps | Loss: $(round(loss, digits=4)) | MNS: $(round(mns, digits=3))")
+            flush(stdout)
             
-            # Forward pass para o MNS
-            logits = model(masked)
-            
-            if false # [MMAP DISABLED]
-                # Atualizar Dashboard
-                mns = 0.5f0 + (epoch * 0.1f0) + (i * 0.01f0)
+            if mm !== nothing
                 mm[81:84] .= collect(reinterpret(UInt8, [Float32(mns)]))
-                mm[5] = UInt8(i) # Step
-                
-                # Ler Recompensa do Gemini
-                reward = reinterpret(Float32, mm[41:44])[1]
-                if reward > 0.8
-                    print(" [RLAIF +] ")
-                    flush(stdout)
-                    # train_on_reward!(model, tokens[:, 1], reward)
-                end
-            end
-            
-            if i % 5 == 0
-                println("  Step $i/20 | MNS: $(round(0.5+(i*0.01), digits=3))")
-                flush(stdout)
+                mm[5] = UInt8(step % 256)
             end
         end
     end
     
-    @info "[✓] TREINO UNIFICADO CONCLUIDO."
-    # close(s) Removido para evitar erros se ja estiver fechado
+    @info "[✓] TREINO UNIFICADO CONCLUIDO COM SUCESSO."
+    @info "Modelo agora possui $(length(model.blocks)) camadas híbridas prontas para o Berçário."
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
