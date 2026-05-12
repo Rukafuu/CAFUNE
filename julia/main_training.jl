@@ -217,7 +217,7 @@ function save_best(model, epoch::Int, loss::Float32,
         "timestamp"  => string(now()),
     )
     @save BEST_CKPT model=model meta=meta
-    @info "  ⭐ Melhor checkpoint atualizado (epoch=$epoch, loss=$loss)"
+    @info "  Novo Melhor checkpoint atualizado (epoch=$epoch, loss=$loss)"
 end
 
 """
@@ -483,7 +483,7 @@ function start_training_session()
                 @printf("   [ValueHead] MSE loss: %.4f | Predicted V=%.3f vs Actual R=%.3f\n",
                         vh_loss, predicted_v, combined_reward)
             else
-                # Teacher ausente: usa value head para estimar reward e roda RLAIF
+                # Teacher ausente: usa value head para estimar reward e roda RLAIF em sequencia 
                 rl_idx      = rand(1:length(dataset))
                 ref_tokens  = vec(dataset[rl_idx][:, 1])
                 predicted_v = predict_value(value_head, ref_tokens, mask_id, vocab_size, epoch_progress)
