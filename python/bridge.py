@@ -3,9 +3,16 @@ import mmap
 import time
 import logging
 from filelock import FileLock, Timeout
-
-MEM_FILE = os.path.join(os.path.dirname(__file__), "cafune_brain.mem")
-LOCK_FILE = MEM_FILE + ".lock"
+from cafune_config import (
+    LOCK_FILE,
+    MEM_FILE,
+    MEM_SIZE,
+    PROMPT_END,
+    PROMPT_START,
+    RESPONSE_END,
+    RESPONSE_START,
+    ensure_mmap,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -16,24 +23,22 @@ class BridgeTimeoutError(Exception):
 
 class CAFUNEBridge:
     def __init__(self):
-        # Cria arquivo mem se não existir (1024 bytes)
-        if not os.path.exists(MEM_FILE):
-            with open(MEM_FILE, "wb") as f:
-                f.write(b'\0' * 1024)
+        ensure_mmap()
         print("🚀 [Silicon Bridge] Ponte de Memória Compartilhada (MMap) ativada!")
 
     def generate_response(self, prompt):
+        mm = None
         try:
             with FileLock(LOCK_FILE, timeout=10):
                 with open(MEM_FILE, "r+b") as f:
                     mm = mmap.mmap(f.fileno(), 0)
 
                     # Zero out old prompt (offsets 600..1000)
-                    mm[600:1000] = b'\0' * 400
+                    mm[PROMPT_START:PROMPT_END] = b'\0' * (PROMPT_END - PROMPT_START)
 
                     # Write prompt encoded
-                    enc = prompt.encode('utf-8')[:399]
-                    mm[600:600+len(enc)] = enc
+                    enc = prompt.encode('utf-8')[: PROMPT_END - PROMPT_START - 1]
+                    mm[PROMPT_START:PROMPT_START+len(enc)] = enc
 
                     # Enviar gatilho
                     mm[0] = 0x01
@@ -48,7 +53,7 @@ class CAFUNEBridge:
                             raise BridgeTimeoutError("Daemon não respondeu em 120s. Engine ligado?")
 
                     # Ler resposta (offsets 200..600)
-                    res_bytes = mm[200:600]
+                    res_bytes = mm[RESPONSE_START:RESPONSE_END]
                     end_idx = res_bytes.find(b'\x00')
                     if end_idx != -1:
                         res_bytes = res_bytes[:end_idx]
@@ -68,6 +73,9 @@ class CAFUNEBridge:
         except UnicodeDecodeError as e:
             logger.error("Resposta do engine não é UTF-8 válido: %s", e)
             return "[Silicon Bridge Error] Resposta corrompida."
+        finally:
+            if mm is not None and not mm.closed:
+                mm.close()
 
 
 if __name__ == "__main__":

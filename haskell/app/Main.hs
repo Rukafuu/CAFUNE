@@ -36,4 +36,4 @@ main = do
         initialBrain = initialState totalPassos estrategia
         
     putStrLn $ "[Brain] Iniciando difusão estratégica [" ++ show estrategia ++ "]..."
-    brainStep initialBrain
+    diffusionLoop initialBrain

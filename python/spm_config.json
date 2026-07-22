@@ -5,7 +5,7 @@
   "bos_id": 2,
   "eos_id": 3,
   "seq_len": 128,
-  "model_file": "C:\\Users\\conta\\Documents\\Lira\\Lira\\CAFUNE\\CAFUNE\\optimistic-mirzakhani\\python\\cafune_spm.model",
+  "model_file": "cafune_spm.model",
   "n_sequences": 6331,
   "tokenizer": "sentencepiece"
 }

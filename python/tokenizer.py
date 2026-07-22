@@ -66,7 +66,7 @@ class CharTokenizer:
                 self.id2char[idx] = char
 
         self.vocab_size = len(self.char2id)
-        print(f"✅ Vocabulário construído: {self.vocab_size} tokens")
+        print(f"Vocabulário construído: {self.vocab_size} tokens")
         print(f"   Especiais: {N_SPECIAL} | Chars: {self.vocab_size - N_SPECIAL}")
 
     def encode(self, text: str, add_special: bool = True) -> list[int]:
@@ -141,7 +141,7 @@ class CharTokenizer:
         tok.id2char = {int(v): k for k, v in data["char2id"].items()}
         tok.vocab_size = data["vocab_size"]
 
-        print(f"✅ Tokenizador carregado: {tok.vocab_size} tokens")
+        print(f"Tokenizador carregado: {tok.vocab_size} tokens")
         return tok
 
 
@@ -149,9 +149,46 @@ class CharTokenizer:
 #  Teste rápido
 # ──────────────────────────────────────────────────────────────
 
-# Alias de compatibilidade: BPETokenizer aponta para CharTokenizer.
-# O tokenizador atual é character-level. A migração para BPE real está em vocab_builder.py.
-BPETokenizer = CharTokenizer
+class SentencePieceTokenizer:
+    """Wrapper do modelo BPE canônico usado pelo motor Julia."""
+
+    def __init__(self, model_path: Union[str, Path, None] = None, **_ignored):
+        try:
+            import sentencepiece as spm
+        except ImportError as exc:
+            raise RuntimeError("Instale sentencepiece para usar o tokenizador BPE") from exc
+
+        self.model_path = Path(model_path or Path(__file__).with_name("cafune_spm.model"))
+        if not self.model_path.is_file():
+            raise FileNotFoundError(f"Modelo SentencePiece não encontrado: {self.model_path}")
+        self.processor = spm.SentencePieceProcessor(model_file=str(self.model_path))
+        self.vocab_size = self.processor.get_piece_size()
+
+    def encode(self, text: str, add_special: bool = True) -> list[int]:
+        ids = list(self.processor.encode(text, out_type=int))
+        if add_special:
+            ids = [self.processor.bos_id(), *ids, self.processor.eos_id()]
+        return ids
+
+    def decode(self, ids: list[int], skip_special: bool = True) -> str:
+        if skip_special:
+            special = {
+                self.processor.pad_id(),
+                self.processor.unk_id(),
+                self.processor.bos_id(),
+                self.processor.eos_id(),
+                self.processor.piece_to_id("[MASK]"),
+            }
+            ids = [token_id for token_id in ids if token_id not in special]
+        return self.processor.decode(ids)
+
+    def pad(self, ids: list[int], max_len: int, pad_right: bool = True) -> list[int]:
+        ids = ids[:max_len]
+        padding = [self.processor.pad_id()] * (max_len - len(ids))
+        return ids + padding if pad_right else padding + ids
+
+
+BPETokenizer = SentencePieceTokenizer
 
 if __name__ == "__main__":
     corpus = [

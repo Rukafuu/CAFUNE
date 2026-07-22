@@ -149,6 +149,41 @@ GELU activation — usado em GPT/BERT, mais suave que ReLU.
 """
 gelu(x) = x .* 0.5f0 .* (1f0 .+ tanh.(sqrt(2f0/π) .* (x .+ 0.044715f0 .* x.^3)))
 
+# ============================================================
+#  BitLinear b1.58 (treinamento com pesos mestres Float32)
+# ============================================================
+
+"""Projecao linear ternaria. O peso mestre continua em Float32 para treino."""
+mutable struct BitLinear
+    weight::Matrix{Float32}
+end
+
+@functor BitLinear (weight,)
+
+function BitLinear(out_features::Int, in_features::Int; scale::Float32=Float32(sqrt(2 / in_features)))
+    BitLinear(randn(Float32, out_features, in_features) .* scale)
+end
+
+"""Straight-through estimator: usa `quantized` no forward e gradiente identidade."""
+ste(master, quantized) = master .+ Zygote.dropgrad(quantized .- master)
+
+function ternary_weight(weight::AbstractMatrix{Float32})
+    gamma = Statistics.mean(abs, weight) + eps(Float32)
+    quantized = clamp.(round.(weight ./ gamma), -1f0, 1f0) .* gamma
+    return ste(weight, quantized)
+end
+
+function quantized_activation(x::AbstractMatrix{Float32})
+    # Escala por token (coluna), equivalente a fake-quant int8 W2A8.
+    scale = 127f0 ./ max.(maximum(abs.(x), dims=1), eps(Float32))
+    quantized = clamp.(round.(x .* scale), -128f0, 127f0) ./ scale
+    return ste(x, quantized)
+end
+
+(layer::BitLinear)(x::Matrix{Float32}) = ternary_weight(layer.weight) * quantized_activation(x)
+linear_projection(weight::AbstractMatrix{Float32}, x::Matrix{Float32}) = weight * x
+linear_projection(layer::BitLinear, x::Matrix{Float32}) = layer(x)
+
 # ──────────────────────────────────────────────────────────────
 #  RoPE: Rotary Positional Embeddings
 # ──────────────────────────────────────────────────────────────
@@ -182,7 +217,7 @@ Pre-calcula as tabelas de cosseno e seno para o RoPE.
 function precompute_rope(seq_len::Int, d_head::Int)
     half = d_head ÷ 2
     # Frequências: base 10000 como no Llama
-    inv_freq = 1.0f0 ./ (10000.0f0 .^ (Float32.(0:2:half-1) ./ d_head))
+    inv_freq = 1.0f0 ./ (10000.0f0 .^ ((2.0f0 .* Float32.(0:half-1)) ./ d_head))
     
     t = Float32.(0:seq_len-1)
     # outer product: (half, seq_len)
@@ -202,26 +237,26 @@ Atenção multi-cabeça SEM máscara causal — o modelo vê toda a sequência.
 Parâmetros: Wq, Wk, Wv (projeções), Wo (saída).
 """
 mutable struct MultiHeadAttention
-    Wq::Matrix{Float32}   # (d_model, d_model)
-    Wk::Matrix{Float32}
-    Wv::Matrix{Float32}
-    Wo::Matrix{Float32}
+    Wq::Any   # Matrix{Float32} ou BitLinear
+    Wk::Any
+    Wv::Any
+    Wo::Any
     n_heads::Int
     d_head::Int            # d_model ÷ n_heads
 end
 
 @functor MultiHeadAttention (Wq, Wk, Wv, Wo)
 
-function MultiHeadAttention(d_model::Int, n_heads::Int)
+function MultiHeadAttention(d_model::Int, n_heads::Int; linear_mode::Symbol=:float32)
     @assert d_model % n_heads == 0 "d_model deve ser divisível por n_heads"
     d_head = d_model ÷ n_heads
     scale = Float32(sqrt(d_model))
 
+    make_linear() = linear_mode === :bitnet ? BitLinear(d_model, d_model; scale=1f0/scale) :
+                                             randn(Float32, d_model, d_model) ./ scale
+    linear_mode in (:float32, :bitnet) || error("linear_mode invalido: $linear_mode")
     return MultiHeadAttention(
-        randn(Float32, d_model, d_model) ./ scale,
-        randn(Float32, d_model, d_model) ./ scale,
-        randn(Float32, d_model, d_model) ./ scale,
-        randn(Float32, d_model, d_model) ./ scale,
+        make_linear(), make_linear(), make_linear(), make_linear(),
         n_heads,
         d_head
     )
@@ -236,9 +271,9 @@ function (mha::MultiHeadAttention)(x::Matrix{Float32})
     cos_pos, sin_pos = precompute_rope(seq_len, d_head)
 
     # Projeções Q, K, V: (d_model, seq_len)
-    Q = mha.Wq * x
-    K = mha.Wk * x
-    V = mha.Wv * x
+    Q = linear_projection(mha.Wq, x)
+    K = linear_projection(mha.Wk, x)
+    V = linear_projection(mha.Wv, x)
 
     # Multi-head split: (d_head, n_heads, seq_len)
     Q_mh = reshape(Q, d_head, n_heads, seq_len)
@@ -257,7 +292,7 @@ function (mha::MultiHeadAttention)(x::Matrix{Float32})
     out_heads = [V_p[:, :, h] * heads[h] for h in 1:n_heads]
     
     output_concat = reduce(vcat, out_heads)
-    return mha.Wo * output_concat
+    return linear_projection(mha.Wo, output_concat)
 end
 
 # ============================================================
@@ -271,9 +306,9 @@ Atenção por Sincronia de Disparo. Em vez de Dot-Product, usa a proximidade
 temporal/espacial em um hipercubo unitário via Kernel RBF.
 """
 mutable struct SpikingSynchronyAttention
-    W_proj::Matrix{Float32} # Projeta para o Hipercubo [0, 1]^d
-    Wv::Matrix{Float32}
-    Wo::Matrix{Float32}
+    W_proj::Any # Matrix{Float32} ou BitLinear
+    Wv::Any
+    Wo::Any
     tau::Float32           # Temperatura do Kernel (RBF precision)
     n_heads::Int
     d_head::Int
@@ -281,13 +316,14 @@ end
 
 @functor SpikingSynchronyAttention (W_proj, Wv, Wo)
 
-function SpikingSynchronyAttention(d_model::Int, n_heads::Int; tau=0.5f0)
+function SpikingSynchronyAttention(d_model::Int, n_heads::Int; tau=0.5f0, linear_mode::Symbol=:float32)
     d_head = d_model ÷ n_heads
     scale = Float32(sqrt(d_model))
+    make_linear() = linear_mode === :bitnet ? BitLinear(d_model, d_model; scale=1f0/scale) :
+                                             randn(Float32, d_model, d_model) ./ scale
+    linear_mode in (:float32, :bitnet) || error("linear_mode invalido: $linear_mode")
     return SpikingSynchronyAttention(
-        randn(Float32, d_model, d_model) ./ scale,
-        randn(Float32, d_model, d_model) ./ scale,
-        randn(Float32, d_model, d_model) ./ scale,
+        make_linear(), make_linear(), make_linear(),
         Float32(tau),
         n_heads,
         d_head
@@ -303,8 +339,8 @@ function (ssa::SpikingSynchronyAttention)(x::Matrix{Float32})
     cos_pos, sin_pos = precompute_rope(seq_len, d_head)
 
     # 1. Projeção para o Hipercubo Unitário (Baseado no Isla-SNN)
-    P = Flux.sigmoid.(ssa.W_proj * x) # (d_model, seq_len)
-    V = ssa.Wv * x
+    P = Flux.sigmoid.(linear_projection(ssa.W_proj, x)) # (d_model, seq_len)
+    V = linear_projection(ssa.Wv, x)
 
     # Multi-head split
     P_mh = reshape(P, d_head, n_heads, seq_len)
@@ -315,8 +351,7 @@ function (ssa::SpikingSynchronyAttention)(x::Matrix{Float32})
     V_p = permutedims(V_mh, (1, 3, 2))
 
     # 2. Kernel de Sincronia (RBF)
-    out_heads = []
-    for h in 1:n_heads
+    out_heads = [begin
         Ph = P_rope[:, :, h] 
         Vh = V_p[:, :, h] 
         
@@ -324,11 +359,11 @@ function (ssa::SpikingSynchronyAttention)(x::Matrix{Float32})
         dist_sq = sum(Ph.^2, dims=1)' .+ sum(Ph.^2, dims=1) .- 2 .* (Ph' * Ph)
         attn = exp.(-dist_sq ./ (2 * ssa.tau^2))
         attn_norm = attn ./ (sum(attn, dims=1) .+ 1f-6)
-        push!(out_heads, Vh * attn_norm)
-    end
+        Vh * attn_norm
+    end for h in 1:n_heads]
     
     output_concat = reduce(vcat, out_heads)
-    return ssa.Wo * output_concat
+    return linear_projection(ssa.Wo, output_concat)
 end
 
 
@@ -343,28 +378,31 @@ Posição-wise FFN: Linear → GELU → Linear
 Expande d_model → d_ff → d_model
 """
 mutable struct FFN
-    W1::Matrix{Float32}   # (d_ff, d_model)
+    W1::Any   # Matrix{Float32} ou BitLinear
     b1::Vector{Float32}
-    W2::Matrix{Float32}   # (d_model, d_ff)
+    W2::Any   # Matrix{Float32} ou BitLinear
     b2::Vector{Float32}
 end
 
 @functor FFN
 
-function FFN(d_model::Int, d_ff::Int)
+function FFN(d_model::Int, d_ff::Int; linear_mode::Symbol=:float32)
     scale = Float32(sqrt(2.0 / d_model))
+    linear_mode in (:float32, :bitnet) || error("linear_mode invalido: $linear_mode")
+    W1 = linear_mode === :bitnet ? BitLinear(d_ff, d_model; scale=scale) : randn(Float32, d_ff, d_model) .* scale
+    W2 = linear_mode === :bitnet ? BitLinear(d_model, d_ff; scale=scale) : randn(Float32, d_model, d_ff) .* scale
     return FFN(
-        randn(Float32, d_ff, d_model) .* scale,
+        W1,
         zeros(Float32, d_ff),
-        randn(Float32, d_model, d_ff) .* scale,
+        W2,
         zeros(Float32, d_model)
     )
 end
 
 function (ffn::FFN)(x::Matrix{Float32})
     # x: (d_model, seq_len)
-    h = gelu(ffn.W1 * x .+ ffn.b1)   # (d_ff, seq_len)
-    return ffn.W2 * h .+ ffn.b2       # (d_model, seq_len)
+    h = gelu(linear_projection(ffn.W1, x) .+ ffn.b1)   # (d_ff, seq_len)
+    return linear_projection(ffn.W2, h) .+ ffn.b2       # (d_model, seq_len)
 end
 
 # ============================================================
@@ -388,10 +426,10 @@ end
 
 @functor TransformerBlock
 
-function TransformerBlock(d_model::Int, n_heads::Int, d_ff::Int)
+function TransformerBlock(d_model::Int, n_heads::Int, d_ff::Int; linear_mode::Symbol=:float32)
     return TransformerBlock(
-        MultiHeadAttention(d_model, n_heads),
-        FFN(d_model, d_ff),
+        MultiHeadAttention(d_model, n_heads; linear_mode=linear_mode),
+        FFN(d_model, d_ff; linear_mode=linear_mode),
         ones(Float32, d_model),   # γ inicializado com 1
         zeros(Float32, d_model),  # β inicializado com 0
         ones(Float32, d_model),
@@ -427,10 +465,10 @@ end
 
 @functor SpikingTransformerBlock
 
-function SpikingTransformerBlock(d_model::Int, n_heads::Int, d_ff::Int)
+function SpikingTransformerBlock(d_model::Int, n_heads::Int, d_ff::Int; linear_mode::Symbol=:float32)
     return SpikingTransformerBlock(
-        SpikingSynchronyAttention(d_model, n_heads),
-        FFN(d_model, d_ff),
+        SpikingSynchronyAttention(d_model, n_heads; linear_mode=linear_mode),
+        FFN(d_model, d_ff; linear_mode=linear_mode),
         ones(Float32, d_model),
         zeros(Float32, d_model),
         ones(Float32, d_model),
@@ -497,7 +535,7 @@ end
 
 @functor BidirectionalTransformer (token_emb, blocks, norm_final_γ, norm_final_β, lm_head)
 
-function BidirectionalTransformer(config::TransformerConfig)
+function BidirectionalTransformer(config::TransformerConfig; linear_mode::Symbol=:float32)
     scale = Float32(sqrt(1.0 / config.d_model))
 
     token_emb = randn(Float32, config.d_model, config.vocab_size) .* scale
@@ -508,9 +546,9 @@ function BidirectionalTransformer(config::TransformerConfig)
     blocks = []
     for l in 1:config.n_layers
         if l <= config.n_layers ÷ 2
-            push!(blocks, TransformerBlock(config.d_model, config.n_heads, config.d_ff))
+            push!(blocks, TransformerBlock(config.d_model, config.n_heads, config.d_ff; linear_mode=linear_mode))
         else
-            push!(blocks, SpikingTransformerBlock(config.d_model, config.n_heads, config.d_ff))
+            push!(blocks, SpikingTransformerBlock(config.d_model, config.n_heads, config.d_ff; linear_mode=linear_mode))
         end
     end
 
@@ -572,8 +610,9 @@ function count_params(model::BidirectionalTransformer)
     n = 0
     cfg = model.config
     n += cfg.d_model * cfg.vocab_size   # token_emb
-    for _ in 1:cfg.n_layers
-        n += 4 * cfg.d_model^2          # Wq, Wk, Wv, Wo
+    for block in model.blocks
+        attention_matrices = block isa TransformerBlock ? 4 : 3
+        n += attention_matrices * cfg.d_model^2
         n += cfg.d_ff * cfg.d_model + cfg.d_ff  # W1, b1
         n += cfg.d_model * cfg.d_ff + cfg.d_model  # W2, b2
         n += 4 * cfg.d_model            # 2x LayerNorm (γ, β)

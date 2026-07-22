@@ -1,0 +1,44 @@
+[model]
+name = "cafune-45m"
+vocab_size = 1999
+seq_len = 128
+d_model = 512
+n_heads = 8
+n_layers = 12
+d_ff = 2624
+dropout = 0.1
+linear_mode = "float32"
+
+[variants.bitnet]
+linear_mode = "bitnet"
+weight_bits = 1.58
+activation_bits = 8
+
+[integration.bitnet_cpp]
+root_env = "BITNET_ROOT"
+role = "teacher_and_future_inference_runtime"
+
+[tokenizer]
+type = "sentencepiece_bpe"
+model = "python/cafune_spm.model"
+vocab = "python/vocab_spm.json"
+config = "python/spm_config.json"
+dataset = "python/dataset_tokens.json"
+pad_id = 0
+unk_id = 1
+bos_id = 2
+eos_id = 3
+mask_id = 4
+
+[targets]
+parameters = 45100000
+validation_loss = 0.3422
+local_only = true
+latency_is_acceptance_criterion = false
+
+[data]
+splits = "python/dataset_splits.json"
+train_ratio = 0.90
+validation_ratio = 0.05
+test_ratio = 0.05
+split_seed = "cafune-v1"

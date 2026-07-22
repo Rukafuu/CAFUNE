@@ -9,7 +9,7 @@
 #    - Resume automático do melhor checkpoint
 # ============================================================
 
-using Mmap, Dates, Statistics, Printf, JSON
+using Mmap, Dates, Statistics, Printf, JSON, TOML, SHA
 using BSON: @save, @load
 
 include("src/transformer.jl")
@@ -84,14 +84,20 @@ end
 
 # ── Paths absolutos ───────────────────────────────────────────────
 const SCRIPT_DIR  = @__DIR__
+const SANITY_MODE = "--sanity" in ARGS
+const BITNET_MODE = "--bitnet" in ARGS
+const RESEARCH_CONFIG = normpath(joinpath(SCRIPT_DIR, "..", "config", "research.toml"))
 const MEM_FILE    = normpath(joinpath(SCRIPT_DIR, "..", "cafune_brain.mem"))
 const CORPUS_FILE   = normpath(joinpath(SCRIPT_DIR, "..", "python", "social_data.json"))
 const VOCAB_FILE    = normpath(joinpath(SCRIPT_DIR, "..", "vocab.json"))
 const SPM_CONFIG    = normpath(joinpath(SCRIPT_DIR, "..", "python", "spm_config.json"))
 const SPM_TOKENS    = normpath(joinpath(SCRIPT_DIR, "..", "python", "dataset_tokens.json"))
-const CKPT_DIR    = joinpath(SCRIPT_DIR, "checkpoints")
+const DATA_SPLITS   = normpath(joinpath(SCRIPT_DIR, "..", "python", "dataset_splits.json"))
+const VARIANT_DIR = BITNET_MODE ? "bitnet" : "baseline"
+const CKPT_DIR    = BITNET_MODE ? joinpath(SCRIPT_DIR, "checkpoints", SANITY_MODE ? "sanity" : "", "bitnet") :
+                                  (SANITY_MODE ? joinpath(SCRIPT_DIR, "checkpoints", "sanity") : joinpath(SCRIPT_DIR, "checkpoints"))
 const BEST_CKPT   = joinpath(CKPT_DIR, "cafune_best.bson")
-const TRAIN_LOG   = joinpath(SCRIPT_DIR, "training_log.jsonl")
+const TRAIN_LOG   = SANITY_MODE ? joinpath(CKPT_DIR, "training_log.jsonl") : joinpath(SCRIPT_DIR, "training_log.jsonl")
 
 # ── Tokenizador character-level ───────────────────────────────────
 
@@ -194,7 +200,9 @@ function save_checkpoint(model, epoch::Int, loss::Float32,
         "d_model"    => config.d_model,
         "n_layers"   => config.n_layers,
         "n_heads"    => config.n_heads,
+        "d_ff"       => config.d_ff,
         "seq_len"    => config.seq_len,
+        "linear_mode" => BITNET_MODE ? "bitnet" : "float32",
         "timestamp"  => string(now()),
     )
     @save path model=model meta=meta
@@ -213,7 +221,9 @@ function save_best(model, epoch::Int, loss::Float32,
         "d_model"    => config.d_model,
         "n_layers"   => config.n_layers,
         "n_heads"    => config.n_heads,
+        "d_ff"       => config.d_ff,
         "seq_len"    => config.seq_len,
+        "linear_mode" => BITNET_MODE ? "bitnet" : "float32",
         "timestamp"  => string(now()),
     )
     @save BEST_CKPT model=model meta=meta
@@ -224,13 +234,27 @@ end
 Tenta carregar o melhor checkpoint existente.
 Retorna (model, meta, start_epoch) ou (nothing, nothing, 0).
 """
-function try_resume()
+function try_resume(expected::TransformerConfig)
     !isfile(BEST_CKPT) && return nothing, nothing, 0
 
     @info "Checkpoint encontrado: $BEST_CKPT"
     local model, meta
     try
         @load BEST_CKPT model meta
+        expected_meta = Dict(
+            "vocab_size" => expected.vocab_size,
+            "d_model" => expected.d_model,
+            "n_layers" => expected.n_layers,
+            "n_heads" => expected.n_heads,
+            "d_ff" => expected.d_ff,
+            "seq_len" => expected.seq_len,
+            "linear_mode" => BITNET_MODE ? "bitnet" : "float32",
+        )
+        mismatches = ["$key=$(get(meta, key, "ausente")) esperado=$value" for (key, value) in expected_meta if get(meta, key, nothing) != value]
+        if !isempty(mismatches)
+            @warn "Checkpoint incompatível com config/research.toml: $(join(mismatches, ", ")). Iniciando do zero."
+            return nothing, nothing, 0
+        end
         @info "  Resumindo do epoch $(meta["epoch"]) | loss $(round(meta["loss"], digits=4))"
         return model, meta, Int(meta["epoch"])
     catch e
@@ -246,13 +270,15 @@ function start_training_session()
     @info "  CAFUNE ENGINE — Treino Fase 2"
     @info "══════════════════════════════════════════════"
 
-    # Hiperparâmetros
-    SEQ_LEN      = 128
-    D_MODEL      = 256
-    N_HEADS      = 8
-    N_LAYERS     = 6
-    D_FF         = 1024
-    EPOCHS       = 100
+    # Hiperparâmetros canônicos
+    research     = TOML.parsefile(RESEARCH_CONFIG)
+    model_cfg    = research["model"]
+    SEQ_LEN      = Int(model_cfg["seq_len"])
+    D_MODEL      = Int(model_cfg["d_model"])
+    N_HEADS      = Int(model_cfg["n_heads"])
+    N_LAYERS     = Int(model_cfg["n_layers"])
+    D_FF         = Int(model_cfg["d_ff"])
+    EPOCHS       = SANITY_MODE ? 1 : 100
     MAX_LR       = 8e-6   # pico do cosine — sobe gradualmente via warmup
     WARMUP_RATIO = 0.05  # 5% warmup linear + cosine decay até MAX_LR/10
 
@@ -314,24 +340,36 @@ function start_training_session()
         dataset = load_dataset(CORPUS_FILE, char2id, SEQ_LEN)
     end
 
+    isfile(DATA_SPLITS) || error("Splits ausentes. Execute: python python/prepare_splits.py")
+    split_manifest = JSON.parsefile(DATA_SPLITS)
+    dataset_sha = bytes2hex(sha256(read(SPM_TOKENS)))
+    dataset_sha == split_manifest["dataset_sha256"] || error("dataset_tokens.json mudou. Regenere com: python python/prepare_splits.py")
+    train_indices = Int.(split_manifest["splits"]["train"]) .+ 1
+    validation_indices = Int.(split_manifest["splits"]["validation"]) .+ 1
+    training_dataset = dataset[train_indices]
+    validation_dataset = dataset[validation_indices]
+    @info "   Splits: train=$(length(training_dataset)) validation=$(length(validation_dataset)) test=$(length(split_manifest["splits"]["test"]))"
+
     # ── 3. Modelo — resume ou inicializa ────────────────────────
     @info "3. Inicializando modelo..."
-    existing_model, _, start_epoch = try_resume()
-
     # Após shift +1: IDs vão de 1..vocab_size; mask_id já foi ajustado acima
     # TransformerConfig recebe o tamanho real do embedding (vocab_size)
     # char-level: mask era vocab_size (ID extra) → precisava +1
     actual_vocab = vocab_size   # SPM e char-level ambos ficam corretos após ajustes
-    config = TransformerConfig(actual_vocab, SEQ_LEN, D_MODEL, N_HEADS, N_LAYERS, D_FF, 0.0f0)
+    expected_vocab = Int(model_cfg["vocab_size"])
+    actual_vocab == expected_vocab || error("Vocabulário incompatível: dataset=$actual_vocab, research.toml=$expected_vocab")
+    config = TransformerConfig(actual_vocab, SEQ_LEN, D_MODEL, N_HEADS, N_LAYERS, D_FF, Float32(model_cfg["dropout"]))
     md     = MaskDiffusion(vocab_size - 1; mask_token_id=mask_id, num_steps=20)
+    existing_model, _, start_epoch = try_resume(config)
 
     if existing_model !== nothing
         model = existing_model
         @info "   Modelo restaurado | $(round(count_params(model)/1e6, digits=2))M params"
     else
-        model = BidirectionalTransformer(config)
+        linear_mode = BITNET_MODE ? :bitnet : :float32
+        model = BidirectionalTransformer(config; linear_mode=linear_mode)
         start_epoch = 0
-        @info "   Modelo novo | $(round(count_params(model)/1e6, digits=2))M params"
+        @info "   Modelo novo ($(linear_mode)) | $(round(count_params(model)/1e6, digits=2))M params"
     end
 
     # ── 4. Barramento mmap ──────────────────────────────────────
@@ -345,7 +383,7 @@ function start_training_session()
     #   60     Ethics flag         (uint8)
     @info "4. Conectando barramento mmap..."
     mm = nothing; s = nothing
-    if isfile(MEM_FILE)
+    if !SANITY_MODE && isfile(MEM_FILE)
         s  = open(MEM_FILE, "r+")
         mm = mmap(s, Vector{UInt8}, (2048,))
         @info "   Barramento RLAIF ativo."
@@ -365,7 +403,7 @@ function start_training_session()
 
     # ── 5. Loop de treino com checkpointing e RLAIF ────────────
     best_loss = Inf32
-    STEPS_PER_EPOCH = 500  # subsample por epoch — dataset completo visto em ~13 epochs
+    STEPS_PER_EPOCH = SANITY_MODE ? 2 : 500
     TOTAL_EPOCHS    = start_epoch + EPOCHS
     @info "5. Iniciando treino | epochs $(start_epoch+1)→$TOTAL_EPOCHS | $STEPS_PER_EPOCH steps/epoch"
 
@@ -378,8 +416,8 @@ function start_training_session()
         flush(stdout)
 
         # Subsample aleatório do dataset para manter epochs rápidas (~5 min)
-        n_steps    = min(STEPS_PER_EPOCH, length(dataset))
-        epoch_data = dataset[randperm(length(dataset))[1:n_steps]]
+        n_steps    = min(STEPS_PER_EPOCH, length(training_dataset))
+        epoch_data = training_dataset[randperm(length(training_dataset))[1:n_steps]]
 
         # ── Treino supervisionado (com curriculum masking) ──
         model = train!(model, md, epoch_data;
@@ -388,12 +426,12 @@ function start_training_session()
                        warmup_ratio   = WARMUP_RATIO,
                        epoch_progress = epoch_progress)
 
-        # ── Estimar loss ──
-        sample_n     = min(20, length(dataset))
-        sample_idx   = randperm(length(dataset))[1:sample_n]
-        epoch_losses = Float32[compute_loss(model, md, dataset[i]) for i in sample_idx]
-        avg_loss     = mean(epoch_losses)
-        @printf("   Loss estimada (n=%d): %.4f\n", sample_n, avg_loss)
+        # ── Avaliação reproduzível em dados nunca usados pelo treino ──
+        validation_n = min(SANITY_MODE ? 2 : 50, length(validation_dataset))
+        Random.seed!(20_260_721)
+        validation_losses = Float32[compute_loss(model, md, validation_dataset[i]) for i in 1:validation_n]
+        avg_loss = mean(validation_losses)
+        @printf("   Validation loss (n=%d): %.4f\n", validation_n, avg_loss)
 
         # ── Escrita do timestamp e loss no mmap ──
         if mm !== nothing
@@ -467,14 +505,14 @@ function start_training_session()
             if combined_reward > 0.0f0
                 @info "   [RLAIF] Teacher=$(round(mns_score,digits=3)) MNS=$(round(mns_local,digits=3)) Raegis=$(round(effective_raegis,digits=3)) Guardian=$(round(guardian_penalty,digits=3)) → Reward=$(round(combined_reward,digits=3))"
 
-                rl_idx  = rand(1:length(dataset))
+                rl_idx  = rand(1:length(training_dataset))
                 rl_loss, opt_state_rl, model = train_on_reward!(
-                    model, md, opt_state_rl, dataset[rl_idx], combined_reward
+                    model, md, opt_state_rl, training_dataset[rl_idx], combined_reward
                 )
                 @printf("   [RLAIF] TraceRL loss: %.4f\n", rl_loss)
 
                 # ── Value head: treina para prever o reward observado ──
-                ref_tokens = vec(dataset[rl_idx][:, 1])
+                ref_tokens = vec(training_dataset[rl_idx][:, 1])
                 vh_loss, opt_state_vh, value_head = train_value_head!(
                     value_head, opt_state_vh,
                     ref_tokens, mask_id, vocab_size, epoch_progress, combined_reward
@@ -484,13 +522,13 @@ function start_training_session()
                         vh_loss, predicted_v, combined_reward)
             else
                 # Teacher ausente: usa value head para estimar reward e roda RLAIF
-                rl_idx      = rand(1:length(dataset))
-                ref_tokens  = vec(dataset[rl_idx][:, 1])
+                rl_idx      = rand(1:length(training_dataset))
+                ref_tokens  = vec(training_dataset[rl_idx][:, 1])
                 predicted_v = predict_value(value_head, ref_tokens, mask_id, vocab_size, epoch_progress)
                 if predicted_v > 0.3f0
                     @info "   [ValueHead] Teacher offline — usando V̂=$(round(predicted_v,digits=3)) como proxy reward"
                     rl_loss, opt_state_rl, model = train_on_reward!(
-                        model, md, opt_state_rl, dataset[rl_idx], predicted_v
+                        model, md, opt_state_rl, training_dataset[rl_idx], predicted_v
                     )
                     @printf("   [RLAIF proxy] TraceRL loss: %.4f\n", rl_loss)
                 else
@@ -500,14 +538,16 @@ function start_training_session()
         end
 
         # ── Log de progresso (lido pelo dashboard) ──
+        mkpath(dirname(TRAIN_LOG))
         open(TRAIN_LOG, "a") do f
             entry = JSON.json(Dict(
                 "epoch"      => actual_epoch,
                 "total"      => TOTAL_EPOCHS,
-                "loss"       => round(Float64(avg_loss), digits=4),
+                "validation_loss" => round(Float64(avg_loss), digits=4),
                 "best_loss"  => round(Float64(min(avg_loss, best_loss)), digits=4),
                 "timestamp"  => Dates.format(now(), "HH:MM:SS"),
-                "dataset_n"  => length(dataset),
+                "train_n"    => length(training_dataset),
+                "validation_n" => length(validation_dataset),
             ))
             println(f, entry)
         end

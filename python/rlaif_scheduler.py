@@ -26,13 +26,12 @@ import json
 import random
 import struct
 from filelock import FileLock, Timeout
+from cafune_config import LOCK_FILE, MEM_FILE
 
 # Força stdout UTF-8 no Windows
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 # ── Paths ────────────────────────────────────────────────────────────────────
-MEM_FILE       = os.path.normpath(os.path.join(os.path.dirname(__file__), "cafune_brain.mem"))
-LOCK_FILE      = MEM_FILE + ".lock"
 SOCIAL_FILE    = os.path.normpath(os.path.join(os.path.dirname(__file__), "social_data.json"))
 BERCARIO_FILE  = os.path.normpath(os.path.join(os.path.dirname(__file__), "bercario_data.jsonl"))
 

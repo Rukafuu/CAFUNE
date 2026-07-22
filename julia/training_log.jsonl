@@ -273,3 +273,4 @@
 {"best_loss":2.341,"dataset_n":1482,"epoch":238,"loss":2.5687,"timestamp":"13:36:55","total":334}
 {"best_loss":2.341,"dataset_n":1482,"epoch":239,"loss":2.7933,"timestamp":"13:42:41","total":334}
 {"best_loss":2.5217,"dataset_n":1576,"epoch":237,"loss":2.5217,"timestamp":"14:38:52","total":336}
+{"best_loss":7.6068,"epoch":1,"timestamp":"22:07:44","total":1,"train_n":5725,"validation_loss":7.6068,"validation_n":306}

@@ -2,6 +2,7 @@ import sys
 import re
 import os
 import wandb
+import requests
 
 import os
 

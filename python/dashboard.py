@@ -13,6 +13,7 @@ import json
 import random
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from cafune_config import MEM_FILE, MEM_SIZE
 
 # Se bridge.py existir e juliacall estiver ok, podemos chamar
 # Por enquanto, usaremos uma simulação robusta se falhar.
@@ -28,8 +29,6 @@ except Exception as e:
 app = Flask(__name__)
 CORS(app) # Habilitar CORS para dev local
 
-MEM_FILE  = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "cafune_brain.mem"))
-MEM_SIZE  = 2048
 TRAIN_LOG = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "julia", "training_log.jsonl"))
 
 # Histórico para os gráficos do Recharts

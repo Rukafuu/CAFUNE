@@ -48,3 +48,4 @@ start_*.cmd
 *.mem
 *.jsonl
 .CondaPkg/
+wandb/

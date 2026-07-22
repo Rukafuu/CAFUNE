@@ -7,7 +7,7 @@
 # ============================================================
 
 using Flux
-using Flux: @functor
+using Functors: @functor
 using Zygote
 
 """
@@ -142,12 +142,12 @@ end
 
 Evoluído para usar Reservatório 11D (2048 neurônios).
 Os logits entram no reservatório, reverberam na estrutura 11D,
-e depois são lidos pela camada de saída (65 tokens).
+e depois são lidos por uma camada de saída dimensionada pelo vocabulário.
 """
 mutable struct SpikingDecoder
-    W_in::Matrix{Float32}     # Projeta de Vocab (65) -> Hypercube (2048)
+    W_in::Matrix{Float32}     # Projeta do vocabulário -> Hypercube
     lif_res::LIFCell          # Reservatório 11D
-    lif_out::LIFCell          # Readout Layer -> Vocab (65)
+    lif_out::LIFCell          # Readout Layer -> vocabulário
     value_head::Any           # UniGRPO Value Head
     timesteps::Int
     vocab_size::Int
@@ -189,7 +189,7 @@ function (decoder::SpikingDecoder)(logits::AbstractVector)
     probs = exp.((logits .- maximum(logits)) ./ 1.0f0)
     probs ./= sum(probs)
     
-    # Encoder Poisson no VOCAB (65)
+    # Encoder Poisson no vocabulário configurado
     p_mat = reshape(probs, decoder.vocab_size, 1)
     pulse_train = poisson_encoder(p_mat, decoder.timesteps)
     

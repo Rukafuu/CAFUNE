@@ -31,7 +31,7 @@ class TestMmapStructure(unittest.TestCase):
 
     def setUp(self):
         self.tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mem")
-        self.tmp.write(b'\x00' * 1024)
+        self.tmp.write(b'\x00' * 2048)
         self.tmp.flush()
         self.mem_path = self.tmp.name
 
@@ -40,7 +40,7 @@ class TestMmapStructure(unittest.TestCase):
         os.unlink(self.mem_path)
 
     def test_file_size(self):
-        self.assertEqual(os.path.getsize(self.mem_path), 1024)
+        self.assertEqual(os.path.getsize(self.mem_path), 2048)
 
     def test_cmd_id_offset_zero(self):
         """Offset 0 deve ser 0x00 (idle) no estado inicial."""
@@ -95,7 +95,7 @@ class TestBridgeTimeout(unittest.TestCase):
 
     def setUp(self):
         self.tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mem")
-        self.tmp.write(b'\x00' * 1024)
+        self.tmp.write(b'\x00' * 2048)
         self.tmp.flush()
         self.tmp.close()
         self.mem_path = self.tmp.name
@@ -172,16 +172,15 @@ class TestTokenizerRoundtrip(unittest.TestCase):
         padded = self.tok.pad(ids, 10)
         self.assertEqual(len(padded), 10)
 
-    def test_vocab_size_param_ignored(self):
-        """vocab_size passado no __init__ não deve lançar TypeError."""
-        from tokenizer import CharTokenizer
-        tok = CharTokenizer(vocab_size=512)
-        self.assertIsNotNone(tok)
-
-    def test_bpetokenizer_alias(self):
-        """BPETokenizer deve ser o mesmo que CharTokenizer."""
+    def test_bpetokenizer_is_real_sentencepiece(self):
         from tokenizer import BPETokenizer, CharTokenizer
-        self.assertIs(BPETokenizer, CharTokenizer)
+        tok = BPETokenizer()
+        self.assertNotEqual(BPETokenizer, CharTokenizer)
+        self.assertEqual(tok.vocab_size, 1999)
+        text = "CAFUNE fala português."
+        self.assertEqual(tok.decode(tok.encode(text)), text)
+        for phrase in ("Olá", "ação", "você", "coração", "informação", "não", "CAFUNÉ"):
+            self.assertEqual(tok.decode(tok.encode(phrase)), phrase)
 
 
 class TestMNSLocal(unittest.TestCase):
