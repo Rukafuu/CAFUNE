@@ -122,3 +122,10 @@ julia --project=julia julia/main_training.jl --bitnet
 A baseline Float32 segue como padrão. A variante usa pesos mestres Float32 para
 treino, pesos ternários no forward e checkpoints próprios em
 `julia/checkpoints/bitnet/`.
+
+RLAIF é opcional e só deve ser ativado quando um teacher compatível estiver
+respondendo pelo mmap:
+
+```powershell
+julia --project=julia julia/main_training.jl --bitnet --rlaif
+```

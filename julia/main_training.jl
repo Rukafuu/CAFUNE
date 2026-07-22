@@ -49,7 +49,9 @@ Retorna valor ∈ (0, 1).
 function predict_value(vh::ValueHead, tokens::Vector{Int},
                        mask_id::Int, vocab_size::Int, epoch_progress::Float32)
     mask_ratio   = Float32(count(==(mask_id), tokens)) / Float32(length(tokens))
-    avg_tok_norm = Float32(mean(filter(t -> t != mask_id, tokens); init=0)) / Float32(vocab_size)
+    visible_tokens = filter(t -> t != mask_id, tokens)
+    avg_token = isempty(visible_tokens) ? 0f0 : Float32(mean(visible_tokens))
+    avg_tok_norm = avg_token / Float32(vocab_size)
     features     = Float32[mask_ratio, avg_tok_norm, epoch_progress]
     h = tanh.(vh.W1 * features .+ vh.b1)
     v = (vh.W2 * h .+ vh.b2)[1]
@@ -66,7 +68,9 @@ function train_value_head!(vh::ValueHead, opt_vh,
                             vocab_size::Int, epoch_progress::Float32,
                             actual_reward::Float32)
     mask_ratio   = Float32(count(==(mask_id), tokens)) / Float32(length(tokens))
-    avg_tok_norm = Float32(mean(filter(t -> t != mask_id, tokens); init=0)) / Float32(vocab_size)
+    visible_tokens = filter(t -> t != mask_id, tokens)
+    avg_token = isempty(visible_tokens) ? 0f0 : Float32(mean(visible_tokens))
+    avg_tok_norm = avg_token / Float32(vocab_size)
     features     = Float32[mask_ratio, avg_tok_norm, epoch_progress]
     target       = actual_reward
 
@@ -86,6 +90,7 @@ end
 const SCRIPT_DIR  = @__DIR__
 const SANITY_MODE = "--sanity" in ARGS
 const BITNET_MODE = "--bitnet" in ARGS
+const RLAIF_MODE  = "--rlaif" in ARGS
 const RESEARCH_CONFIG = normpath(joinpath(SCRIPT_DIR, "..", "config", "research.toml"))
 const MEM_FILE    = normpath(joinpath(SCRIPT_DIR, "..", "cafune_brain.mem"))
 const CORPUS_FILE   = normpath(joinpath(SCRIPT_DIR, "..", "python", "social_data.json"))
@@ -360,7 +365,7 @@ function start_training_session()
     actual_vocab == expected_vocab || error("Vocabulário incompatível: dataset=$actual_vocab, research.toml=$expected_vocab")
     config = TransformerConfig(actual_vocab, SEQ_LEN, D_MODEL, N_HEADS, N_LAYERS, D_FF, Float32(model_cfg["dropout"]))
     md     = MaskDiffusion(vocab_size - 1; mask_token_id=mask_id, num_steps=20)
-    existing_model, _, start_epoch = try_resume(config)
+    existing_model, existing_meta, start_epoch = try_resume(config)
 
     if existing_model !== nothing
         model = existing_model
@@ -383,12 +388,12 @@ function start_training_session()
     #   60     Ethics flag         (uint8)
     @info "4. Conectando barramento mmap..."
     mm = nothing; s = nothing
-    if !SANITY_MODE && isfile(MEM_FILE)
+    if !SANITY_MODE && RLAIF_MODE && isfile(MEM_FILE)
         s  = open(MEM_FILE, "r+")
         mm = mmap(s, Vector{UInt8}, (2048,))
         @info "   Barramento RLAIF ativo."
     else
-        @warn "   cafune_brain.mem não encontrado — RLAIF desativado."
+        RLAIF_MODE && @warn "   cafune_brain.mem não encontrado — RLAIF desativado."
     end
 
     # Optimizer separado para RLAIF (LR menor para não sobrescrever treino supervisionado)
@@ -402,12 +407,13 @@ function start_training_session()
     opt_state_vh  = Optimisers.setup(opt_vh, value_head)
 
     # ── 5. Loop de treino com checkpointing e RLAIF ────────────
-    best_loss = Inf32
+    best_loss = existing_meta === nothing ? Inf32 : Float32(get(existing_meta, "loss", Inf32))
     STEPS_PER_EPOCH = SANITY_MODE ? 2 : 500
-    TOTAL_EPOCHS    = start_epoch + EPOCHS
+    RUN_EPOCHS      = SANITY_MODE ? 1 : max(EPOCHS - start_epoch, 0)
+    TOTAL_EPOCHS    = SANITY_MODE ? start_epoch + RUN_EPOCHS : EPOCHS
     @info "5. Iniciando treino | epochs $(start_epoch+1)→$TOTAL_EPOCHS | $STEPS_PER_EPOCH steps/epoch"
 
-    for epoch in 1:EPOCHS
+    for epoch in 1:RUN_EPOCHS
         actual_epoch  = start_epoch + epoch
         # progress ∈ [0, 1] ao longo de todo o treino planejado — usado no curriculum
         epoch_progress = Float32(actual_epoch - 1) / Float32(max(TOTAL_EPOCHS - 1, 1))
@@ -433,6 +439,13 @@ function start_training_session()
         avg_loss = mean(validation_losses)
         @printf("   Validation loss (n=%d): %.4f\n", validation_n, avg_loss)
 
+        # Salva o estado validado antes dos serviços opcionais de pós-treino.
+        save_checkpoint(model, actual_epoch, Float32(avg_loss), config, vocab_size)
+        if avg_loss < best_loss
+            best_loss = avg_loss
+            save_best(model, actual_epoch, Float32(avg_loss), config, vocab_size)
+        end
+
         # ── Escrita do timestamp e loss no mmap ──
         if mm !== nothing
             ts_bytes   = reinterpret(UInt8, [Float64(Dates.datetime2unix(now()))])
@@ -443,8 +456,12 @@ function start_training_session()
 
         # ── Geração iterativa e escrita no mmap (buffer 200-600) ──
         # (deve ocorrer ANTES do handshake para o teacher ter texto para avaliar)
+        teacher_responded = false
         if mm !== nothing
             try
+                # Descarta sinais antigos antes de publicar uma nova geração.
+                mm[41:56] .= 0x00
+                mm[61] = 0x00
                 gen_ids = generate(model, md, SEQ_LEN; num_steps=20, temperature=0.5f0, valid_ids=valid_ids)
                 # SPM: tokens têm prefixo ▁ no lugar de espaço — substituir na decodificação
                 decoded = join([replace(get(id2char, id, ""), "▁" => " ") for id in gen_ids if id != md.mask_token_id && id > 4])
@@ -469,6 +486,7 @@ function start_training_session()
                 end
 
                 if mm[1] == 0x04
+                    teacher_responded = true
                     @info "   [RLAIF] Handshake 0x04 ✓ — teacher respondeu"
                     mm[1] = 0x00  # reseta para o próximo epoch
                 else
@@ -480,7 +498,7 @@ function start_training_session()
         end
 
         # ── Leitura e combinação dos sinais RLAIF ──
-        if mm !== nothing
+        if mm !== nothing && teacher_responded
             mns_score        = reinterpret(Float32, mm[41:44])[1]   # offset 40 — score do teacher
             mns_local        = reinterpret(Float32, mm[45:48])[1]   # offset 44 — score secundário
             raegis_penalty   = reinterpret(Float32, mm[49:52])[1]   # offset 48
@@ -521,21 +539,10 @@ function start_training_session()
                 @printf("   [ValueHead] MSE loss: %.4f | Predicted V=%.3f vs Actual R=%.3f\n",
                         vh_loss, predicted_v, combined_reward)
             else
-                # Teacher ausente: usa value head e roda RLAIF em sequencia,
-                # sempre limitado ao split de treino para evitar data leakage.
-                rl_idx      = rand(1:length(training_dataset))
-                ref_tokens  = vec(training_dataset[rl_idx][:, 1])
-                predicted_v = predict_value(value_head, ref_tokens, mask_id, vocab_size, epoch_progress)
-                if predicted_v > 0.3f0
-                    @info "   [ValueHead] Teacher offline — usando V̂=$(round(predicted_v,digits=3)) como proxy reward"
-                    rl_loss, opt_state_rl, model = train_on_reward!(
-                        model, md, opt_state_rl, training_dataset[rl_idx], predicted_v
-                    )
-                    @printf("   [RLAIF proxy] TraceRL loss: %.4f\n", rl_loss)
-                else
-                    @info "   [RLAIF] Reward zerado e V̂ baixo — sem atualização RLAIF neste epoch."
-                end
+                @info "   [RLAIF] Teacher respondeu sem reward positivo; sem atualização."
             end
+        elseif mm !== nothing
+            @info "   [RLAIF] Teacher offline; etapa de reward ignorada."
         end
 
         # ── Log de progresso (lido pelo dashboard) ──
@@ -554,11 +561,6 @@ function start_training_session()
         end
 
         # ── Checkpoints ──
-        save_checkpoint(model, actual_epoch, Float32(avg_loss), config, vocab_size)
-        if avg_loss < best_loss
-            best_loss = avg_loss
-            save_best(model, actual_epoch, Float32(avg_loss), config, vocab_size)
-        end
     end
 
     # ── 6. Finalização ──────────────────────────────────────────
