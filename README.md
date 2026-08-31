@@ -112,6 +112,13 @@ julia --project=julia julia/engine_mmap.jl
 Treino e RLAIF podem alterar checkpoints e consumir serviços externos. Rode o
 `doctor` e os testes antes de iniciar esses processos. Nenhum comando de
 verificação acima realiza treino ou chama APIs de modelos.
+
+## Licença
+
+O código-fonte e a documentação autoral do CAFUNE são disponibilizados sob a
+[Apache License 2.0](LICENSE). Datasets, modelos, pesos, vocabulários derivados,
+artefatos de treino e imagens não são automaticamente cobertos por essa licença;
+consulte [DATA_AND_ASSETS.md](DATA_AND_ASSETS.md) antes de reutilizá-los.
 ### Variante ternária BitNet
 
 ```powershell
