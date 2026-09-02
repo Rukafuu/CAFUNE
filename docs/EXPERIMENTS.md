@@ -25,6 +25,21 @@ conclusão sem um relatório de avaliação reproduzível.
 - **Próxima comparação:** MHA-only versus MHA+SSA, com esta configuração e os
   mesmos controles.
 
+## EXP-002 — Controle MHA-only para a SSA
+
+- **Hipótese:** a SSA pode ser comparada de forma isolada contra MHA quando
+  capacidade, tokenizer, dados, splits, avaliação e seeds permanecem fixos.
+- **Branch:** `feature/mha-baseline`.
+- **Configuração:** `config/experiments/mha-baseline.toml` — 8 camadas MHA,
+  `d_model=256`, 8 heads e `d_ff=960`, total de 7.071.232 parâmetros.
+- **Pareamento:** o híbrido EXP-001 tem 7.071.744 parâmetros; a diferença é de
+  512 (0,007%) porque a FFN varia em incrementos discretos. Não há SSA nesta
+  variante.
+- **Controles:** o mesmo BPE 1.999, sequência 128, dataset, split, seeds e
+  métrica de decisão de EXP-001.
+- **Estado:** implementação e sanity check em CI; nenhum resultado de treino
+  comparável foi produzido ainda.
+
 ## Convenções de artefatos
 
 - Checkpoints: `julia/checkpoints/<experimento>/`.

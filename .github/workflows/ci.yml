@@ -43,3 +43,5 @@ jobs:
         run: julia --project=julia julia/smoke_test.jl
       - name: Run CAFUNE-mini training sanity check
         run: julia --project=julia julia/main_training.jl --config config/experiments/cafune-mini.toml --sanity
+      - name: Run MHA baseline training sanity check
+        run: julia --project=julia julia/main_training.jl --config config/experiments/mha-baseline.toml --sanity

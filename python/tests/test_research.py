@@ -31,3 +31,20 @@ def test_cafune_mini_configuration_is_a_7m_ablation_model():
         n_layers=model["n_layers"],
         d_ff=model["d_ff"],
     ) == 7_071_744
+
+
+def test_mha_baseline_is_parameter_matched_to_cafune_mini():
+    configs = ROOT / "config" / "experiments"
+    mini = tomllib.loads((configs / "cafune-mini.toml").read_text(encoding="utf-8"))["model"]
+    mha = tomllib.loads((configs / "mha-baseline.toml").read_text(encoding="utf-8"))["model"]
+    mini_params = parameter_count(
+        vocab_size=mini["vocab_size"], d_model=mini["d_model"],
+        n_layers=mini["n_layers"], d_ff=mini["d_ff"],
+    )
+    mha_params = parameter_count(
+        vocab_size=mha["vocab_size"], d_model=mha["d_model"],
+        n_layers=mha["n_layers"], d_ff=mha["d_ff"],
+        attention_mode=mha["attention_mode"],
+    )
+    assert mha_params == 7_071_232
+    assert abs(mini_params - mha_params) <= 512

@@ -19,6 +19,8 @@
 - `config/research.toml` define a configuração de pesquisa canônica.
 - `config/experiments/cafune-mini.toml` é a configuração de ~7,07M parâmetros
   para ablações. Preserve tokenizer, dados e splits ao comparar mini vs baseline.
+- `config/experiments/mha-baseline.toml` é o controle MHA-only pareado ao mini;
+  a diferença de 512 parâmetros é documentada e intencional.
 - `python/dataset_splits.json` é o contrato de splits determinísticos. Se o
   dataset tokenizado mudar, regenere os splits antes de treinar ou avaliar.
 - O melhor checkpoint é escolhido por `aggregate.loss_mean` da avaliação de

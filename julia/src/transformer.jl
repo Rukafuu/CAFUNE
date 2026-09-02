@@ -535,17 +535,19 @@ end
 
 @functor BidirectionalTransformer (token_emb, blocks, norm_final_γ, norm_final_β, lm_head)
 
-function BidirectionalTransformer(config::TransformerConfig; linear_mode::Symbol=:float32)
+function BidirectionalTransformer(config::TransformerConfig;
+                                  linear_mode::Symbol=:float32,
+                                  attention_mode::Symbol=:hybrid)
+    attention_mode in (:hybrid, :mha) || error("attention_mode deve ser :hybrid ou :mha")
     scale = Float32(sqrt(1.0 / config.d_model))
 
     token_emb = randn(Float32, config.d_model, config.vocab_size) .* scale
 
-    # Criamos uma arquitetura híbrida: 
-    # Primeiras camadas: Atenção Padrão (Silício) para extração de features
-    # Últimas camadas: Spiking Synchrony Attention (Neuromórfico) para síntese
+    # A baseline :mha usa somente atenção padrão. A configuração :hybrid mantém
+    # MHA na primeira metade e SSA na segunda para permitir uma ablação limpa.
     blocks = []
     for l in 1:config.n_layers
-        if l <= config.n_layers ÷ 2
+        if attention_mode === :mha || l <= config.n_layers ÷ 2
             push!(blocks, TransformerBlock(config.d_model, config.n_heads, config.d_ff; linear_mode=linear_mode))
         else
             push!(blocks, SpikingTransformerBlock(config.d_model, config.n_heads, config.d_ff; linear_mode=linear_mode))

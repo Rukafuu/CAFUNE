@@ -16,8 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "config" / "research.toml"
 
 
-def parameter_count(*, vocab_size: int, d_model: int, n_layers: int, d_ff: int) -> int:
-    """Conta o modelo híbrido: metade MHA (4 matrizes), metade SSA (3)."""
+def parameter_count(*, vocab_size: int, d_model: int, n_layers: int, d_ff: int,
+                    attention_mode: str = "hybrid") -> int:
+    """Conta MHA-only ou o híbrido, que usa metade MHA e metade SSA."""
 
     embeddings = 2 * d_model * vocab_size
     common = (
@@ -27,7 +28,9 @@ def parameter_count(*, vocab_size: int, d_model: int, n_layers: int, d_ff: int) 
         + d_model
         + 4 * d_model
     )
-    standard_layers = n_layers // 2
+    if attention_mode not in {"hybrid", "mha"}:
+        raise ValueError(f"attention_mode inválido: {attention_mode}")
+    standard_layers = n_layers if attention_mode == "mha" else n_layers // 2
     ssa_layers = n_layers - standard_layers
     blocks = standard_layers * (4 * d_model**2 + common) + ssa_layers * (3 * d_model**2 + common)
     final_norm = 2 * d_model

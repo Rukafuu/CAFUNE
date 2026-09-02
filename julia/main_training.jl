@@ -204,7 +204,8 @@ end
 
 """Salva checkpoint por epoch (julia/checkpoints/cafune_epochN_lossL.bson)."""
 function save_checkpoint(model, epoch::Int, loss::Float32,
-                         config::TransformerConfig, vocab_size::Int)
+                         config::TransformerConfig, vocab_size::Int,
+                         attention_mode::Symbol)
     mkpath(CKPT_DIR)
     loss_str = @sprintf("%.4f", loss)
     ts       = Dates.format(now(), "yyyymmdd_HHMMSS")
@@ -220,6 +221,7 @@ function save_checkpoint(model, epoch::Int, loss::Float32,
         "d_ff"       => config.d_ff,
         "seq_len"    => config.seq_len,
         "linear_mode" => BITNET_MODE ? "bitnet" : "float32",
+        "attention_mode" => String(attention_mode),
         "timestamp"  => string(now()),
     )
     @save path model=model meta=meta
@@ -229,7 +231,8 @@ end
 
 """Atualiza o melhor checkpoint (cafune_best.bson)."""
 function save_best(model, epoch::Int, loss::Float32,
-                   config::TransformerConfig, vocab_size::Int)
+                   config::TransformerConfig, vocab_size::Int,
+                   attention_mode::Symbol)
     mkpath(CKPT_DIR)
     meta = Dict(
         "epoch"      => epoch,
@@ -241,6 +244,7 @@ function save_best(model, epoch::Int, loss::Float32,
         "d_ff"       => config.d_ff,
         "seq_len"    => config.seq_len,
         "linear_mode" => BITNET_MODE ? "bitnet" : "float32",
+        "attention_mode" => String(attention_mode),
         "timestamp"  => string(now()),
     )
     @save BEST_CKPT model=model meta=meta
@@ -251,7 +255,7 @@ end
 Tenta carregar o melhor checkpoint existente.
 Retorna (model, meta, start_epoch) ou (nothing, nothing, 0).
 """
-function try_resume(expected::TransformerConfig)
+function try_resume(expected::TransformerConfig, attention_mode::Symbol)
     !isfile(BEST_CKPT) && return nothing, nothing, 0
 
     @info "Checkpoint encontrado: $BEST_CKPT"
@@ -266,6 +270,7 @@ function try_resume(expected::TransformerConfig)
             "d_ff" => expected.d_ff,
             "seq_len" => expected.seq_len,
             "linear_mode" => BITNET_MODE ? "bitnet" : "float32",
+            "attention_mode" => String(attention_mode),
         )
         mismatches = ["$key=$(get(meta, key, "ausente")) esperado=$value" for (key, value) in expected_meta if get(meta, key, nothing) != value]
         if !isempty(mismatches)
@@ -295,6 +300,8 @@ function start_training_session()
     N_HEADS      = Int(model_cfg["n_heads"])
     N_LAYERS     = Int(model_cfg["n_layers"])
     D_FF         = Int(model_cfg["d_ff"])
+    ATTENTION_MODE = Symbol(get(model_cfg, "attention_mode", "hybrid"))
+    ATTENTION_MODE in (:hybrid, :mha) || error("attention_mode inválido: $ATTENTION_MODE")
     EPOCHS       = SANITY_MODE ? 1 : 100
     MAX_LR       = 8e-6   # pico do cosine — sobe gradualmente via warmup
     WARMUP_RATIO = 0.05  # 5% warmup linear + cosine decay até MAX_LR/10
@@ -377,14 +384,14 @@ function start_training_session()
     actual_vocab == expected_vocab || error("Vocabulário incompatível: dataset=$actual_vocab, research.toml=$expected_vocab")
     config = TransformerConfig(actual_vocab, SEQ_LEN, D_MODEL, N_HEADS, N_LAYERS, D_FF, Float32(model_cfg["dropout"]))
     md     = MaskDiffusion(vocab_size - 1; mask_token_id=mask_id, num_steps=20)
-    existing_model, existing_meta, start_epoch = try_resume(config)
+    existing_model, existing_meta, start_epoch = try_resume(config, ATTENTION_MODE)
 
     if existing_model !== nothing
         model = existing_model
         @info "   Modelo restaurado | $(round(count_params(model)/1e6, digits=2))M params"
     else
         linear_mode = BITNET_MODE ? :bitnet : :float32
-        model = BidirectionalTransformer(config; linear_mode=linear_mode)
+        model = BidirectionalTransformer(config; linear_mode=linear_mode, attention_mode=ATTENTION_MODE)
         start_epoch = 0
         @info "   Modelo novo ($(linear_mode)) | $(round(count_params(model)/1e6, digits=2))M params"
     end
@@ -461,10 +468,10 @@ function start_training_session()
         ))
 
         # Salva o estado validado antes dos serviços opcionais de pós-treino.
-        save_checkpoint(model, actual_epoch, Float32(avg_loss), config, vocab_size)
+        save_checkpoint(model, actual_epoch, Float32(avg_loss), config, vocab_size, ATTENTION_MODE)
         if avg_loss < best_loss
             best_loss = avg_loss
-            save_best(model, actual_epoch, Float32(avg_loss), config, vocab_size)
+            save_best(model, actual_epoch, Float32(avg_loss), config, vocab_size, ATTENTION_MODE)
         end
 
         # ── Escrita do timestamp e loss no mmap ──
