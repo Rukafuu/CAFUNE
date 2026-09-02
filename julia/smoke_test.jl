@@ -21,6 +21,13 @@ gradient = CAFUNE.Zygote.gradient(layer -> sum(layer(ones(Float32, 4, 2))), bit_
 @assert any(!iszero, gradient.weight)
 @assert size(build_hypercube_connectivity(3)) == (8, 8)
 
+evaluation = evaluate_masked_split(model, MaskDiffusion(64; mask_token_id=64),
+                                   [reshape(collect(1:8), 8, 1)];
+                                   t_levels=Float32[1.0], seeds=[42])
+@assert evaluation["sample_count"] == 1
+@assert evaluation["aggregate"]["masked_tokens"] > 0
+@assert haskey(evaluation["by_mask_ratio"][1], "top_5_accuracy_mean")
+
 cell = LIFCell(4, 8; timesteps=2)
 v, w, spikes = cell(zeros(Float32, 8, 1), zeros(Float32, 8, 1), ones(Float32, 4, 1), 1)
 @assert size(v) == size(w) == size(spikes) == (8, 1)

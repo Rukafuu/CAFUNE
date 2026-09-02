@@ -79,6 +79,17 @@ julia --project=julia julia/main_training.jl --sanity
 O resultado fica isolado em `julia/checkpoints/sanity/` e nunca é usado pela
 inferência principal.
 
+Avalie um checkpoint em splits congelados e máscaras determinísticas. O relatório
+inclui cross-entropy, accuracy e top-5 accuracy nos níveis 0,10 / 0,25 / 0,50 /
+0,75 / 0,90, com média e desvio entre três seeds:
+
+```powershell
+julia --project=julia julia/evaluate.jl --checkpoint julia/checkpoints/cafune_best.bson --split validation
+```
+
+O melhor checkpoint do treino é selecionado por essa `validation loss` agregada,
+nunca pela loss de treino. Os relatórios ficam em `julia/evaluations/`.
+
 Dashboard local:
 
 ```powershell

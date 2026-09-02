@@ -15,6 +15,7 @@ using BSON: @save, @load
 include("src/transformer.jl")
 include("src/diffusion.jl")
 include("src/training.jl")
+include("src/evaluation.jl")
 
 # ── Value Head (UniGRPO/MMaDA) ────────────────────────────────────
 # MLP leve que estima o retorno esperado a partir do estado atual
@@ -434,10 +435,19 @@ function start_training_session()
 
         # ── Avaliação reproduzível em dados nunca usados pelo treino ──
         validation_n = min(SANITY_MODE ? 2 : 50, length(validation_dataset))
-        Random.seed!(20_260_721)
-        validation_losses = Float32[compute_loss(model, md, validation_dataset[i]) for i in 1:validation_n]
-        avg_loss = mean(validation_losses)
-        @printf("   Validation loss (n=%d): %.4f\n", validation_n, avg_loss)
+        evaluation = evaluate_masked_split(model, md, validation_dataset;
+            max_samples=validation_n,
+            t_levels=DEFAULT_EVAL_T_LEVELS,
+            seeds=SANITY_MODE ? Int[20_260_721] : DEFAULT_EVAL_SEEDS,
+        )
+        avg_loss = Float32(evaluation["aggregate"]["loss_mean"])
+        @printf("   Validation loss (n=%d, fixed masks): %.4f\n", validation_n, avg_loss)
+        evaluation_path = joinpath(CKPT_DIR, "evaluation_epoch$(actual_epoch).json")
+        save_evaluation(evaluation_path, evaluation; metadata=Dict(
+            "epoch" => actual_epoch,
+            "split" => "validation",
+            "checkpoint_selection_metric" => "aggregate.loss_mean",
+        ))
 
         # Salva o estado validado antes dos serviços opcionais de pós-treino.
         save_checkpoint(model, actual_epoch, Float32(avg_loss), config, vocab_size)
