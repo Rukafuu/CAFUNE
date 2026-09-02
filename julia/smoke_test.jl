@@ -7,7 +7,7 @@ config = TinyConfig(64)
 model = BidirectionalTransformer(config)
 
 mha_model = BidirectionalTransformer(config; attention_mode=:mha)
-@assert all(block isa TransformerBlock for block in mha_model.blocks)
+@assert all(block isa CAFUNE.TransformerBlock for block in mha_model.blocks)
 @assert count_params(mha_model) > count_params(model)
 
 @assert count_params(model) > 0
