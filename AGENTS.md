@@ -23,6 +23,9 @@
   dataset tokenizado mudar, regenere os splits antes de treinar ou avaliar.
 - O melhor checkpoint é escolhido por `aggregate.loss_mean` da avaliação de
   validação; nunca por loss de treino.
+- Antes de iniciar um treino comparável, registre hipótese e controles em
+  `docs/EXPERIMENTS.md`. Só registre conclusões após existir avaliação
+  reproduzível.
 - Checkpoints, avaliações geradas, logs, caches e mmap são artefatos de runtime,
   não código-fonte.
 
