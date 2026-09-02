@@ -90,6 +90,14 @@ julia --project=julia julia/evaluate.jl --checkpoint julia/checkpoints/cafune_be
 O melhor checkpoint do treino é selecionado por essa `validation loss` agregada,
 nunca pela loss de treino. Os relatórios ficam em `julia/evaluations/`.
 
+Para experimentar hipóteses sem treinar o modelo de 45M, use o CAFUNÉ-mini
+(~7,07M parâmetros). Ele preserva tokenizer, dados e splits da baseline e isola
+seus artefatos em `julia/checkpoints/cafune-mini/`:
+
+```powershell
+julia --project=julia julia/main_training.jl --config config/experiments/cafune-mini.toml --sanity
+```
+
 Dashboard local:
 
 ```powershell
