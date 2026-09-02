@@ -92,16 +92,27 @@ const SCRIPT_DIR  = @__DIR__
 const SANITY_MODE = "--sanity" in ARGS
 const BITNET_MODE = "--bitnet" in ARGS
 const RLAIF_MODE  = "--rlaif" in ARGS
-const RESEARCH_CONFIG = normpath(joinpath(SCRIPT_DIR, "..", "config", "research.toml"))
+const DEFAULT_RESEARCH_CONFIG = normpath(joinpath(SCRIPT_DIR, "..", "config", "research.toml"))
+const RESEARCH_CONFIG = let index = findfirst(==("--config"), ARGS)
+    if index === nothing
+        DEFAULT_RESEARCH_CONFIG
+    else
+        index < length(ARGS) || error("--config requer um caminho para um arquivo TOML.")
+        config_path = ARGS[index + 1]
+        normpath(isabspath(config_path) ? config_path : joinpath(pwd(), config_path))
+    end
+end
+const EXPERIMENT_NAME = RESEARCH_CONFIG == DEFAULT_RESEARCH_CONFIG ? "baseline" : splitext(basename(RESEARCH_CONFIG))[1]
 const MEM_FILE    = normpath(joinpath(SCRIPT_DIR, "..", "cafune_brain.mem"))
 const CORPUS_FILE   = normpath(joinpath(SCRIPT_DIR, "..", "python", "social_data.json"))
 const VOCAB_FILE    = normpath(joinpath(SCRIPT_DIR, "..", "vocab.json"))
 const SPM_CONFIG    = normpath(joinpath(SCRIPT_DIR, "..", "python", "spm_config.json"))
 const SPM_TOKENS    = normpath(joinpath(SCRIPT_DIR, "..", "python", "dataset_tokens.json"))
 const DATA_SPLITS   = normpath(joinpath(SCRIPT_DIR, "..", "python", "dataset_splits.json"))
-const VARIANT_DIR = BITNET_MODE ? "bitnet" : "baseline"
-const CKPT_DIR    = BITNET_MODE ? joinpath(SCRIPT_DIR, "checkpoints", SANITY_MODE ? "sanity" : "", "bitnet") :
-                                  (SANITY_MODE ? joinpath(SCRIPT_DIR, "checkpoints", "sanity") : joinpath(SCRIPT_DIR, "checkpoints"))
+const VARIANT_DIR = BITNET_MODE ? "bitnet" : EXPERIMENT_NAME
+const CKPT_DIR    = BITNET_MODE ? joinpath(SCRIPT_DIR, "checkpoints", SANITY_MODE ? "sanity" : "", EXPERIMENT_NAME, "bitnet") :
+                  SANITY_MODE ? (EXPERIMENT_NAME == "baseline" ? joinpath(SCRIPT_DIR, "checkpoints", "sanity") : joinpath(SCRIPT_DIR, "checkpoints", "sanity", EXPERIMENT_NAME)) :
+                  EXPERIMENT_NAME == "baseline" ? joinpath(SCRIPT_DIR, "checkpoints") : joinpath(SCRIPT_DIR, "checkpoints", EXPERIMENT_NAME)
 const BEST_CKPT   = joinpath(CKPT_DIR, "cafune_best.bson")
 const TRAIN_LOG   = SANITY_MODE ? joinpath(CKPT_DIR, "training_log.jsonl") : joinpath(SCRIPT_DIR, "training_log.jsonl")
 

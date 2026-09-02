@@ -1,0 +1,36 @@
+# Configuração para experimentos e ablações baratos.
+# Mantém tokenizer, dados e sequência da baseline de 45M; reduz apenas capacidade.
+
+[model]
+name = "cafune-mini-7m"
+vocab_size = 1999
+seq_len = 128
+d_model = 256
+n_heads = 8
+n_layers = 8
+d_ff = 1024
+dropout = 0.1
+linear_mode = "float32"
+
+[tokenizer]
+type = "sentencepiece_bpe"
+model = "python/cafune_spm.model"
+vocab = "python/vocab_spm.json"
+config = "python/spm_config.json"
+dataset = "python/dataset_tokens.json"
+pad_id = 0
+unk_id = 1
+bos_id = 2
+eos_id = 3
+mask_id = 4
+
+[data]
+splits = "python/dataset_splits.json"
+train_ratio = 0.90
+validation_ratio = 0.05
+test_ratio = 0.05
+split_seed = "cafune-v1"
+
+[experiment]
+purpose = "cheap_architecture_and_tokenizer_ablations"
+parameters = 7071744

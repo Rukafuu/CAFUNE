@@ -2,7 +2,6 @@ name: CAFUNE CI
 
 on:
   push:
-    branches: [main]
   pull_request:
     branches: [main]
 
@@ -42,3 +41,5 @@ jobs:
         run: julia --project=julia -e 'using Pkg; Pkg.instantiate()'
       - name: Run canonical smoke test
         run: julia --project=julia julia/smoke_test.jl
+      - name: Run CAFUNE-mini training sanity check
+        run: julia --project=julia julia/main_training.jl --config config/experiments/cafune-mini.toml --sanity
